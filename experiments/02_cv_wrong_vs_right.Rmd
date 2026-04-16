@@ -1,0 +1,251 @@
+---
+title: "Cross-Validation: Wrong vs Right Feature Selection"
+author: "Amir Asiaee"
+date: "`r Sys.Date()`"
+output:
+  html_document:
+    theme: flatly
+    highlight: tango
+    toc: true
+    toc_float: true
+    number_sections: true
+    code_folding: show
+    df_print: paged
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(
+
+  echo = TRUE,
+  warning = FALSE,
+  message = FALSE,
+  fig.width = 10,
+  fig.height = 6
+)
+```
+
+# Executive Summary
+
+## Background
+
+This is the **main methodological study** of the project. We compare two approaches
+to cross-validation for elastic net drug response prediction:
+
+1. **Wrong (Published)**: Feature selection on FULL data BEFORE CV (data leakage)
+2. **Right (Correct)**: Feature selection WITHIN each CV fold (no leakage)
+
+The "wrong" approach is what was used in published papers (Barrentina 2012, Ghandi 2019).
+It leads to overly optimistic performance estimates due to information leaking from
+test to train.
+
+## Key Methodological Fix
+
+**Standard Error vs Standard Deviation Bug**: The original implementations reported
+SD of CV errors instead of SE. The correct formula is:
+
+$$SE = \frac{SD}{\sqrt{K}}$$
+
+where $K$ is the number of folds. This implementation uses the correct SE.
+
+# Setup
+
+```{r load-packages}
+library(here)
+library(tidyverse)
+library(glmnet)
+library(caret)
+```
+
+```{r load-methods}
+source(here("methods", "00_paths.R"))
+source(here("methods", "01_data_utils.R"))
+source(here("methods", "02_cv_utils.R"))
+source(here("methods", "04_plot_utils.R"))
+```
+
+# Configuration
+
+```{r config}
+# CV parameters
+CV_NFOLDS <- 5
+BOOTSTRAP_NREPS <- 200
+CORRELATION_THRESHOLD <- 0.1
+VARIANCE_THRESHOLD <- 0.01
+ALPHA_GRID <- seq(0.2, 1.0, by = 0.1)
+GLOBAL_SEED <- 42
+
+# Analysis parameters
+MIN_SAMPLES <- 50  # Minimum samples per drug
+N_DRUGS <- NULL    # NULL = all drugs, or set to integer for testing
+
+# Output
+results_dir <- file.path(paths$results, "cv_results")
+if (!dir.exists(results_dir)) dir.create(results_dir, recursive = TRUE)
+```
+
+# Load Data
+
+```{r load-data}
+data <- load_main_data("Sanger")
+print_data_summary(data)
+```
+
+# Select Drugs for Analysis
+
+```{r select-drugs}
+drugs <- get_drug_list(data)
+
+# Filter to drugs with enough samples
+valid_drugs <- sapply(drugs, function(d) {
+  drug_data <- prepare_drug_data(data, d, min_samples = MIN_SAMPLES)
+  !is.null(drug_data)
+})
+
+drugs_to_analyze <- drugs[valid_drugs]
+
+if (!is.null(N_DRUGS)) {
+  drugs_to_analyze <- drugs_to_analyze[1:min(N_DRUGS, length(drugs_to_analyze))]
+}
+
+cat(sprintf("Analyzing %d drugs (of %d total)\n",
+            length(drugs_to_analyze), length(drugs)))
+```
+
+# Run Comparison
+
+```{r load-precomputed-results}
+results_file <- file.path(paths$scratch, "cv_wrong_vs_right_results.Rda")
+
+if (!file.exists(results_file)) {
+  stop(
+    "Pre-computed results not found.\n",
+    "Run: Rscript methods/run_cv_wrong_vs_right.R\n",
+    "Or:  TEST_MODE=TRUE Rscript methods/run_cv_wrong_vs_right.R"
+  )
+}
+
+load(results_file)
+
+if (!exists("cv_results")) {
+  stop("Expected object 'cv_results' in results file.")
+}
+
+cat("Loaded pre-computed results\n")
+cat("  Drugs:", nrow(cv_results), "\n")
+cat("  Successful:", sum(cv_results$status == "success"), "\n\n")
+
+success_cv <- cv_results %>% filter(status == "success")
+```
+
+# Results Summary
+
+```{r summary-table}
+# Create summary table
+summary_df <- success_cv %>%
+  transmute(
+    Drug = drug,
+    N_samples = n_samples,
+    MSE_wrong = mse_wrong,
+    MSE_right = mse_right,
+    MSE_increase_pct = inflation_pct,
+    Alpha_wrong = alpha_wrong,
+    Alpha_right = alpha_right,
+    Jaccard = jaccard
+  )
+
+# Display summary
+knitr::kable(
+  summary_df %>%
+    arrange(desc(MSE_increase_pct)) %>%
+    head(20),
+  digits = 3,
+  caption = "Top 20 drugs by MSE increase (wrong -> right)"
+)
+```
+
+```{r summary-stats}
+cat("Overall Statistics:\n")
+cat(sprintf("  Drugs analyzed: %d\n", nrow(summary_df)))
+cat(sprintf("  Mean MSE wrong: %.4f (SD: %.4f)\n",
+            mean(summary_df$MSE_wrong), sd(summary_df$MSE_wrong)))
+cat(sprintf("  Mean MSE right: %.4f (SD: %.4f)\n",
+            mean(summary_df$MSE_right), sd(summary_df$MSE_right)))
+cat(sprintf("  Mean MSE increase: %.1f%%\n",
+            mean(summary_df$MSE_increase_pct)))
+cat(sprintf("  Mean Jaccard similarity: %.3f\n",
+            mean(summary_df$Jaccard, na.rm = TRUE)))
+```
+
+# Visualizations
+
+## MSE Comparison
+
+```{r plot-mse-comparison, fig.height=6}
+ggplot(summary_df, aes(x = MSE_wrong, y = MSE_right)) +
+  geom_abline(slope = 1, intercept = 0, linetype = "dashed", color = "gray50") +
+  geom_point(alpha = 0.6, size = 2) +
+  labs(
+    title = "Cross-Validation MSE: Wrong vs Right",
+    subtitle = "Points above diagonal = correct CV gives higher (more realistic) error",
+    x = "MSE (Wrong CV - with leakage)",
+    y = "MSE (Right CV - no leakage)"
+  ) +
+  theme_minimal() +
+  theme(text = element_text(size = 12))
+```
+
+## Jaccard Similarity Distribution
+
+```{r plot-jaccard, fig.height=5}
+ggplot(summary_df, aes(x = Jaccard)) +
+  geom_histogram(bins = 30, fill = "steelblue", color = "white", alpha = 0.8) +
+  geom_vline(xintercept = mean(summary_df$Jaccard, na.rm = TRUE),
+             linetype = "dashed", color = "red", size = 1) +
+  labs(
+    title = "Feature Selection Stability: Jaccard Similarity",
+    subtitle = "Overlap between features selected by wrong vs right CV",
+    x = "Jaccard Index",
+    y = "Count"
+  ) +
+  theme_minimal()
+```
+
+## MSE Increase Distribution
+
+```{r plot-mse-increase, fig.height=5}
+ggplot(summary_df, aes(x = MSE_increase_pct)) +
+  geom_histogram(bins = 30, fill = "coral", color = "white", alpha = 0.8) +
+  geom_vline(xintercept = 0, linetype = "dashed", color = "gray50") +
+  labs(
+    title = "MSE Increase When Using Correct CV",
+    subtitle = "Positive values = correct CV reveals worse (more realistic) performance",
+    x = "MSE Increase (%)",
+    y = "Count"
+  ) +
+  theme_minimal()
+```
+
+# Save Summary Table
+
+```{r save-summary}
+summary_file <- file.path(results_dir, "cv_comparison_summary.csv")
+write_csv(summary_df, summary_file)
+cat(sprintf("Summary saved to: %s\n", summary_file))
+```
+
+# Conclusions
+
+1. **Data leakage matters**: The "wrong" CV approach systematically underestimates
+   prediction error by an average of `r sprintf("%.1f%%", mean(summary_df$MSE_increase_pct))`.
+
+2. **Feature instability**: The low Jaccard similarity (`r sprintf("%.2f", mean(summary_df$Jaccard, na.rm = TRUE))` mean)
+   indicates that the features selected depend heavily on whether proper CV is used.
+
+3. **Standard Error fix**: This analysis uses the correct SE formula (SD/sqrt(K))
+   rather than SD, which was the bug in prior implementations.
+
+# Session Info
+
+```{r session-info}
+sessionInfo()
+```

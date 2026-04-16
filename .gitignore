@@ -1,0 +1,23 @@
+# R
+.Rhistory
+.RData
+.Rproj.user
+*.Rproj
+
+# Large data files
+*.Rda
+*.Rdata
+*.rds
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Editor
+*.swp
+*.swo
+*~
+
+# Build artifacts
+*.html
+*.log

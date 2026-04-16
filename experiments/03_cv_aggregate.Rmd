@@ -1,0 +1,269 @@
+---
+title: "Aggregate CV Results Analysis"
+author: "Amir Asiaee"
+date: "`r Sys.Date()`"
+output:
+  html_document:
+    theme: flatly
+    highlight: tango
+    toc: true
+    toc_float: true
+    number_sections: true
+    code_folding: show
+    df_print: paged
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(
+  echo = TRUE,
+  warning = FALSE,
+  message = FALSE,
+  fig.width = 10,
+  fig.height = 6
+)
+```
+
+# Executive Summary
+
+This notebook aggregates and analyzes the results from the wrong vs right CV comparison
+(experiment 02). It provides summary statistics, visualizations, and statistical tests
+to quantify the impact of data leakage in feature selection.
+
+# Setup
+
+```{r load-packages}
+library(here)
+library(tidyverse)
+library(knitr)
+library(ggpubr)
+```
+
+```{r load-paths}
+source(here("methods", "00_paths.R"))
+source(here("methods", "04_plot_utils.R"))
+```
+
+# Load Results
+
+```{r load-results}
+results_file <- file.path(paths$results, "cv_results", "cv_comparison_full.Rda")
+
+if (!file.exists(results_file)) {
+  stop("Results file not found: ", results_file,
+       "\nRun 02_cv_wrong_vs_right.Rmd first")
+}
+
+load(results_file)  # Loads all_results
+cat(sprintf("Loaded results for %d drugs\n", length(all_results)))
+```
+
+# Summary Statistics
+
+```{r create-summary}
+# Create comprehensive summary
+summary_df <- map_dfr(all_results, function(res) {
+  tibble(
+    Drug = res$drug,
+    N_samples = res$n_samples,
+    N_features = res$n_features,
+
+    # Wrong CV
+    MSE_wrong = res$comparison$mse_wrong,
+    Alpha_wrong = res$comparison$alpha_wrong,
+    Lambda_wrong = res$comparison$lambda_wrong,
+    N_features_wrong = res$comparison$n_features_wrong,
+
+    # Right CV
+    MSE_right = res$comparison$mse_right,
+    Alpha_right = res$comparison$alpha_right,
+    Lambda_right = res$comparison$lambda_right,
+    N_features_right = res$comparison$n_features_right,
+
+    # Comparison
+    MSE_diff = res$comparison$mse_diff,
+    MSE_increase_pct = res$comparison$mse_pct_increase,
+    Jaccard = res$comparison$jaccard
+  )
+})
+```
+
+## Overall Statistics
+
+```{r overall-stats}
+stats_table <- tribble(
+  ~Metric, ~Value,
+  "Total drugs analyzed", nrow(summary_df),
+  "Mean samples per drug", sprintf("%.1f", mean(summary_df$N_samples)),
+  "Mean MSE (wrong CV)", sprintf("%.4f", mean(summary_df$MSE_wrong)),
+  "Mean MSE (right CV)", sprintf("%.4f", mean(summary_df$MSE_right)),
+  "Mean MSE increase (%)", sprintf("%.1f%%", mean(summary_df$MSE_increase_pct)),
+  "Median MSE increase (%)", sprintf("%.1f%%", median(summary_df$MSE_increase_pct)),
+  "Mean Jaccard similarity", sprintf("%.3f", mean(summary_df$Jaccard, na.rm = TRUE)),
+  "Drugs where right > wrong", sprintf("%d (%.1f%%)",
+    sum(summary_df$MSE_right > summary_df$MSE_wrong),
+    100 * mean(summary_df$MSE_right > summary_df$MSE_wrong))
+)
+
+kable(stats_table, caption = "Summary Statistics")
+```
+
+## Statistical Test
+
+```{r paired-test}
+# Paired t-test for MSE difference
+t_result <- t.test(summary_df$MSE_right, summary_df$MSE_wrong, paired = TRUE)
+
+cat("Paired t-test: MSE_right vs MSE_wrong\n")
+cat(sprintf("  t-statistic: %.3f\n", t_result$statistic))
+cat(sprintf("  p-value: %.2e\n", t_result$p.value))
+cat(sprintf("  95%% CI: [%.4f, %.4f]\n",
+            t_result$conf.int[1], t_result$conf.int[2]))
+```
+
+# Visualizations
+
+## MSE Comparison Scatter
+
+```{r scatter-mse, fig.height=7}
+p1 <- ggplot(summary_df, aes(x = MSE_wrong, y = MSE_right)) +
+  geom_abline(slope = 1, intercept = 0, linetype = "dashed", color = "gray50", size = 1) +
+  geom_point(aes(color = MSE_increase_pct), alpha = 0.7, size = 3) +
+  scale_color_gradient2(low = "blue", mid = "gray", high = "red", midpoint = 0,
+                        name = "MSE Increase (%)") +
+  labs(
+    title = "Cross-Validation MSE: Wrong vs Right",
+    subtitle = sprintf("n = %d drugs | Paired t-test p = %.2e", nrow(summary_df), t_result$p.value),
+    x = "MSE (Wrong CV - with data leakage)",
+    y = "MSE (Right CV - no leakage)"
+  ) +
+  theme_minimal(base_size = 14) +
+  theme(legend.position = "right")
+
+print(p1)
+```
+
+## Distribution of MSE Increase
+
+```{r hist-increase, fig.height=5}
+p2 <- ggplot(summary_df, aes(x = MSE_increase_pct)) +
+  geom_histogram(aes(y = ..density..), bins = 30, fill = "steelblue",
+                 color = "white", alpha = 0.8) +
+  geom_density(color = "darkblue", size = 1) +
+  geom_vline(xintercept = 0, linetype = "dashed", color = "red", size = 1) +
+  geom_vline(xintercept = mean(summary_df$MSE_increase_pct),
+             linetype = "solid", color = "darkgreen", size = 1) +
+  annotate("text", x = mean(summary_df$MSE_increase_pct), y = Inf,
+           label = sprintf("Mean: %.1f%%", mean(summary_df$MSE_increase_pct)),
+           vjust = 2, hjust = -0.1, color = "darkgreen") +
+  labs(
+    title = "Distribution of MSE Increase (Right vs Wrong)",
+    subtitle = "Positive = correct CV reveals worse performance (expected)",
+    x = "MSE Increase (%)",
+    y = "Density"
+  ) +
+  theme_minimal(base_size = 14)
+
+print(p2)
+```
+
+## Jaccard Similarity Distribution
+
+```{r hist-jaccard, fig.height=5}
+p3 <- ggplot(summary_df, aes(x = Jaccard)) +
+  geom_histogram(aes(y = ..density..), bins = 25, fill = "coral",
+                 color = "white", alpha = 0.8) +
+  geom_density(color = "darkred", size = 1) +
+  geom_vline(xintercept = mean(summary_df$Jaccard, na.rm = TRUE),
+             linetype = "dashed", color = "darkgreen", size = 1) +
+  labs(
+    title = "Feature Selection Stability (Jaccard Index)",
+    subtitle = sprintf("Mean: %.3f | 1.0 = identical features, 0 = no overlap",
+                       mean(summary_df$Jaccard, na.rm = TRUE)),
+    x = "Jaccard Similarity",
+    y = "Density"
+  ) +
+  theme_minimal(base_size = 14)
+
+print(p3)
+```
+
+## MSE vs Sample Size
+
+```{r mse-vs-n, fig.height=5}
+p4 <- ggplot(summary_df, aes(x = N_samples, y = MSE_increase_pct)) +
+  geom_point(alpha = 0.6, size = 2) +
+  geom_smooth(method = "loess", se = TRUE, color = "blue") +
+  geom_hline(yintercept = 0, linetype = "dashed", color = "red") +
+  labs(
+    title = "MSE Increase vs Sample Size",
+    subtitle = "Does the effect of data leakage depend on sample size?",
+    x = "Number of Samples",
+    y = "MSE Increase (%)"
+  ) +
+  theme_minimal(base_size = 14)
+
+print(p4)
+```
+
+# Top/Bottom Drugs
+
+## Most Affected by Leakage
+
+```{r top-affected}
+kable(
+  summary_df %>%
+    arrange(desc(MSE_increase_pct)) %>%
+    select(Drug, N_samples, MSE_wrong, MSE_right, MSE_increase_pct, Jaccard) %>%
+    head(15),
+  digits = 3,
+  caption = "Top 15 Drugs Most Affected by Data Leakage"
+)
+```
+
+## Least Affected by Leakage
+
+```{r bottom-affected}
+kable(
+  summary_df %>%
+    arrange(MSE_increase_pct) %>%
+    select(Drug, N_samples, MSE_wrong, MSE_right, MSE_increase_pct, Jaccard) %>%
+    head(15),
+  digits = 3,
+  caption = "Top 15 Drugs Least Affected by Data Leakage"
+)
+```
+
+# Save Outputs
+
+```{r save-outputs}
+# Save summary table
+write_csv(summary_df, file.path(paths$results, "tables", "cv_aggregate_summary.csv"))
+
+# Save key figures
+ggsave(file.path(paths$results, "figures", "cv_mse_comparison.pdf"),
+       p1, width = 10, height = 7)
+ggsave(file.path(paths$results, "figures", "cv_mse_increase_dist.pdf"),
+       p2, width = 8, height = 5)
+ggsave(file.path(paths$results, "figures", "cv_jaccard_dist.pdf"),
+       p3, width = 8, height = 5)
+
+cat("Outputs saved to results/tables/ and results/figures/\n")
+```
+
+# Conclusions
+
+1. **Data leakage inflates performance**: Across `r nrow(summary_df)` drugs, correct CV
+   shows `r sprintf("%.1f%%", mean(summary_df$MSE_increase_pct))` higher MSE on average.
+
+2. **Feature selection is unstable**: Mean Jaccard similarity of
+   `r sprintf("%.3f", mean(summary_df$Jaccard, na.rm = TRUE))` indicates the features
+   selected depend heavily on whether data leakage is present.
+
+3. **Effect is robust**: The paired t-test shows the difference is highly significant
+   (p = `r sprintf("%.2e", t_result$p.value)`).
+
+# Session Info
+
+```{r session-info}
+sessionInfo()
+```

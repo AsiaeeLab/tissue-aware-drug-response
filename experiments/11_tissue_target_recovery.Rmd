@@ -1,0 +1,540 @@
+---
+title: "Tissue-Specific Target Recovery: DSEN Shared vs Tissue-Specific Blocks"
+author: "Amir Asiaee"
+date: "`r Sys.Date()`"
+output:
+  html_document:
+    theme: flatly
+    highlight: tango
+    toc: true
+    toc_float: true
+    number_sections: true
+    code_folding: show
+    df_print: paged
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(
+  echo = TRUE,
+  warning = FALSE,
+  message = FALSE,
+  fig.width = 10,
+  fig.height = 6,
+  dpi = 150
+)
+```
+
+# Overview
+
+This analysis extends the target recovery analysis from `10_drug_target_validation.Rmd`
+by incorporating **tissue-specific** DSEN coefficients. The key question: does DSEN's
+tissue-specific block capture drug targets that the shared block misses?
+
+Key improvements over experiment 10:
+
+1. **Corrected gene extraction**: handles all mutation suffixes (`_mut.hs`, `_mut.tr`,
+   `_mut.mis`, `_mut.hsrec`) plus bare RPPA protein features
+2. **Tissue-specific recovery**: uses proper bootstrap frequency counts from
+   `tissue_cnt` (not averaged coefficients)
+3. **Combined recovery**: union of shared + tissue-specific gene sets
+
+# Setup
+
+```{r load-packages}
+library(here)
+library(tidyverse)
+library(knitr)
+library(patchwork)
+library(scales)
+```
+
+```{r load-paths}
+source(here("methods", "00_paths.R"))
+fig_dir <- file.path(paths$results, "figures")
+table_dir <- file.path(paths$results, "tables")
+```
+
+# Feature-to-Gene Mapping
+
+## Feature Type Inventory
+
+The predictor matrix has 86,546 features. We must correctly map each to a gene symbol.
+
+```{r load-feature-names}
+load(file.path(paths$clean, "ccle.Rda"))
+feature_names <- colnames(x)
+cat("Total features:", length(feature_names), "\n")
+rm(x, y, cls)
+```
+
+```{r feature-type-inventory}
+# Classify features by type
+feature_info <- tibble(feature = feature_names) %>%
+  mutate(
+    type = case_when(
+      grepl("_CN$", feature) ~ "CopyNumber",
+      grepl("_mut\\.mis$", feature) ~ "Mutation_missense",
+      grepl("_Expr$", feature) & !grepl("_\\d+_at_Expr$", feature) ~ "Expression",
+      grepl("_mut\\.tr$", feature) ~ "Mutation_truncating",
+      grepl("_mut\\.hs$", feature) ~ "Mutation_highsig",
+      grepl("_mut\\.hsrec$", feature) ~ "Mutation_recurrent",
+      grepl("_\\d+_at_Expr$", feature) ~ "Probe_expression",
+      grepl("_Caution$", feature) ~ "QualityFlag",
+      grepl("_ValidationFailed$|_ValidationUnavailable$", feature) ~ "QualityFlag",
+      TRUE ~ "RPPA"
+    )
+  )
+
+cat("Feature type counts:\n")
+print(table(feature_info$type))
+```
+
+## Gene Extraction from Standard Features
+
+```{r gene-extraction}
+# Extract gene names using correct regex for ALL mutation suffixes
+feature_info <- feature_info %>%
+  mutate(
+    gene = case_when(
+      # Standard genomic features: remove known suffixes
+      type %in% c("CopyNumber", "Expression",
+                   "Mutation_missense", "Mutation_truncating",
+                   "Mutation_highsig", "Mutation_recurrent") ~
+        sub("_mut\\.hsrec$|_mut\\.hs$|_mut\\.tr$|_mut\\.mis$|_Expr$|_CN$", "", feature),
+      # Probe-level and quality flags: no gene mapping
+      type %in% c("Probe_expression", "QualityFlag") ~ NA_character_,
+      # RPPA: handled separately below
+      type == "RPPA" ~ NA_character_
+    )
+  )
+
+cat("Features with gene mapping (before RPPA):",
+    sum(!is.na(feature_info$gene)), "\n")
+cat("Features without mapping (probes + quality flags):",
+    sum(is.na(feature_info$gene) & feature_info$type != "RPPA"), "\n")
+cat("RPPA features to map:", sum(feature_info$type == "RPPA"), "\n")
+```
+
+## RPPA Protein-to-Gene Mapping
+
+139 RPPA features use protein/antibody names. We map each to its HGNC gene symbol.
+
+```{r load-rppa-mapping}
+rppa_mapping <- read_csv(here("data", "rppa_gene_mapping.csv"), show_col_types = FALSE)
+cat("RPPA mapping loaded:", nrow(rppa_mapping), "entries\n")
+cat("Unique genes:", n_distinct(rppa_mapping$hgnc_symbol), "\n")
+
+# Show mapping examples
+kable(
+  rppa_mapping %>%
+    filter(rppa_feature != hgnc_symbol) %>%
+    select(rppa_feature, hgnc_symbol, notes) %>%
+    head(20),
+  caption = "RPPA protein-to-gene mapping examples"
+)
+```
+
+```{r apply-rppa-mapping}
+# Apply RPPA mapping
+rppa_lookup <- setNames(rppa_mapping$hgnc_symbol, rppa_mapping$rppa_feature)
+
+feature_info <- feature_info %>%
+  mutate(
+    gene = ifelse(type == "RPPA" & feature %in% names(rppa_lookup),
+                  rppa_lookup[feature],
+                  gene)
+  )
+
+# Verify: how many RPPA features mapped?
+rppa_mapped <- sum(!is.na(feature_info$gene[feature_info$type == "RPPA"]))
+cat("RPPA features mapped:", rppa_mapped, "/",
+    sum(feature_info$type == "RPPA"), "\n")
+
+# Overall mapping summary
+cat("\nOverall mapping summary:\n")
+feature_info %>%
+  group_by(type) %>%
+  summarize(
+    n = n(),
+    mapped = sum(!is.na(gene)),
+    pct = round(100 * mapped / n, 1)
+  ) %>%
+  kable()
+```
+
+```{r gene-summary}
+# Unique genes available for target matching
+genes_in_data <- unique(feature_info$gene[!is.na(feature_info$gene)])
+cat("Unique genes in feature set:", length(genes_in_data), "\n")
+```
+
+# Load Drug Targets
+
+```{r load-targets}
+drug_targets <- read_csv(here("data", "drug_targets_curated.csv"), show_col_types = FALSE)
+cat("Drug target entries:", nrow(drug_targets), "\n")
+cat("Unique drugs:", n_distinct(drug_targets$drug_name), "\n")
+```
+
+## Gene Name Standardization
+
+```{r standardize-genes}
+gene_mapping <- read_csv(here("data", "gene_name_mapping.csv"), show_col_types = FALSE)
+
+standardize_gene <- function(gene, mapping_df) {
+  match_idx <- match(toupper(gene), toupper(mapping_df$alias))
+  if (!is.na(match_idx)) {
+    return(mapping_df$hgnc_symbol[match_idx])
+  }
+  return(gene)
+}
+
+targets_known <- drug_targets %>%
+  filter(!is.na(target_gene), source != "not_found") %>%
+  mutate(
+    original_target = target_gene,
+    target_gene = sapply(target_gene, standardize_gene, mapping_df = gene_mapping),
+    target_in_features = target_gene %in% genes_in_data
+  )
+
+cat("Drugs with gene targets:", n_distinct(targets_known$drug_name), "\n")
+cat("Drugs with at least one target in feature set:",
+    n_distinct(targets_known$drug_name[targets_known$target_in_features]), "\n")
+```
+
+# Load Bootstrap Results
+
+```{r load-bootstrap}
+# Load v2 bootstrap results (threshold_25_v2 with bug fixes)
+bootstrap_file <- here("results", "dsen_results", "threshold_25_v2", "dsen_bootstrap_results.Rda")
+stopifnot(file.exists(bootstrap_file))
+load(bootstrap_file)
+bootstrap_results <- all_results
+rm(all_results)
+cat("Loaded bootstrap results for", length(bootstrap_results), "drugs\n")
+
+# Verify tissue_cnt exists
+r1 <- bootstrap_results[[1]]
+has_tissue_cnt <- "tissue_cnt" %in% names(r1$dsen_bootstrap)
+cat("Has tissue_cnt:", has_tissue_cnt, "\n")
+if (has_tissue_cnt) {
+  cat("tissue_cnt dimensions:", dim(r1$dsen_bootstrap$tissue_cnt), "\n")
+}
+cat("nboot:", r1$dsen_bootstrap$nboot, "\n")
+```
+
+# Target Recovery Analysis
+
+## Helper Function
+
+```{r map-features-to-genes}
+# Map a vector of feature names to gene symbols
+map_features_to_genes <- function(features, feature_info_df) {
+  feature_info_df %>%
+    filter(feature %in% features, !is.na(gene)) %>%
+    pull(gene) %>%
+    unique()
+}
+```
+
+## Compute Recovery at Multiple Thresholds
+
+```{r compute-recovery}
+THRESHOLDS <- c(0.25, 0.50, 0.75)
+
+compute_all_recovery <- function(bootstrap_results, targets_known_df,
+                                  feature_info_df, thresholds) {
+
+  results_list <- list()
+
+  for (thresh in thresholds) {
+    cat(sprintf("\n=== Threshold: %.2f ===\n", thresh))
+
+    drug_results <- map_dfr(bootstrap_results, function(r) {
+      drug <- r$drug
+      if (r$status != "success") return(NULL)
+
+      # Get targets for this drug
+      drug_tgts <- targets_known_df %>%
+        filter(drug_name == drug, target_in_features == TRUE) %>%
+        pull(target_gene) %>%
+        unique()
+
+      if (length(drug_tgts) == 0) {
+        return(tibble(
+          drug = drug,
+          threshold = thresh,
+          n_targets = 0,
+          en_any = NA, en_full = NA,
+          dsen_shared_any = NA, dsen_shared_full = NA,
+          dsen_tissue_any = NA, dsen_tissue_full = NA,
+          dsen_combined_any = NA, dsen_combined_full = NA,
+          en_targets_found = NA_character_,
+          dsen_shared_targets = NA_character_,
+          dsen_tissue_targets = NA_character_,
+          dsen_combined_targets = NA_character_
+        ))
+      }
+
+      # --- EN ---
+      en_freq <- r$en_bootstrap$cnt / r$en_bootstrap$nboot
+      en_selected <- names(en_freq)[en_freq >= thresh]
+      en_genes <- map_features_to_genes(en_selected, feature_info_df)
+      en_found <- intersect(drug_tgts, en_genes)
+
+      # --- DSEN shared ---
+      dsen_freq <- r$dsen_bootstrap$cnt / r$dsen_bootstrap$nboot
+      dsen_shared_selected <- names(dsen_freq)[dsen_freq >= thresh]
+      dsen_shared_genes <- map_features_to_genes(dsen_shared_selected, feature_info_df)
+      dsen_shared_found <- intersect(drug_tgts, dsen_shared_genes)
+
+      # --- DSEN tissue-specific ---
+      dsen_tissue_genes <- character(0)
+      dsen_tissue_selected <- character(0)
+      if ("tissue_cnt" %in% names(r$dsen_bootstrap)) {
+        tissue_cnt <- r$dsen_bootstrap$tissue_cnt
+        nboot <- r$dsen_bootstrap$nboot
+        tissue_freq <- tissue_cnt / nboot
+        # Feature selected if freq >= threshold in ANY tissue
+        tissue_any <- rownames(tissue_freq)[
+          apply(tissue_freq >= thresh, 1, any)
+        ]
+        dsen_tissue_selected <- tissue_any
+        dsen_tissue_genes <- map_features_to_genes(tissue_any, feature_info_df)
+      }
+      dsen_tissue_found <- intersect(drug_tgts, dsen_tissue_genes)
+
+      # --- DSEN combined ---
+      dsen_combined_genes <- union(dsen_shared_genes, dsen_tissue_genes)
+      dsen_combined_found <- intersect(drug_tgts, dsen_combined_genes)
+
+      tibble(
+        drug = drug,
+        threshold = thresh,
+        n_targets = length(drug_tgts),
+        en_n_found = length(en_found),
+        dsen_shared_n_found = length(dsen_shared_found),
+        dsen_tissue_n_found = length(dsen_tissue_found),
+        dsen_combined_n_found = length(dsen_combined_found),
+        en_any = length(en_found) > 0,
+        en_full = length(en_found) == length(drug_tgts),
+        dsen_shared_any = length(dsen_shared_found) > 0,
+        dsen_shared_full = length(dsen_shared_found) == length(drug_tgts),
+        dsen_tissue_any = length(dsen_tissue_found) > 0,
+        dsen_tissue_full = length(dsen_tissue_found) == length(drug_tgts),
+        dsen_combined_any = length(dsen_combined_found) > 0,
+        dsen_combined_full = length(dsen_combined_found) == length(drug_tgts),
+        en_n_selected = length(en_selected),
+        dsen_shared_n_selected = length(dsen_shared_selected),
+        dsen_tissue_n_selected = length(dsen_tissue_selected),
+        en_targets_found = paste(en_found, collapse = ";"),
+        dsen_shared_targets = paste(dsen_shared_found, collapse = ";"),
+        dsen_tissue_targets = paste(dsen_tissue_found, collapse = ";"),
+        dsen_combined_targets = paste(dsen_combined_found, collapse = ";")
+      )
+    })
+
+    results_list[[as.character(thresh)]] <- drug_results
+  }
+
+  bind_rows(results_list)
+}
+
+recovery_df <- compute_all_recovery(
+  bootstrap_results, targets_known, feature_info, THRESHOLDS
+)
+
+# Filter to drugs with at least one target in features
+recovery_valid <- recovery_df %>%
+  filter(n_targets > 0)
+
+cat("\nDrugs with targets in feature set:",
+    n_distinct(recovery_valid$drug), "\n")
+```
+
+## Summary Statistics
+
+```{r recovery-summary}
+summary_df <- recovery_valid %>%
+  group_by(threshold) %>%
+  summarize(
+    n_drugs = n_distinct(drug),
+    en_any_pct = round(100 * mean(en_any, na.rm = TRUE), 1),
+    en_any_n = sum(en_any, na.rm = TRUE),
+    dsen_shared_any_pct = round(100 * mean(dsen_shared_any, na.rm = TRUE), 1),
+    dsen_shared_any_n = sum(dsen_shared_any, na.rm = TRUE),
+    dsen_tissue_any_pct = round(100 * mean(dsen_tissue_any, na.rm = TRUE), 1),
+    dsen_tissue_any_n = sum(dsen_tissue_any, na.rm = TRUE),
+    dsen_combined_any_pct = round(100 * mean(dsen_combined_any, na.rm = TRUE), 1),
+    dsen_combined_any_n = sum(dsen_combined_any, na.rm = TRUE),
+    .groups = "drop"
+  )
+
+cat("\n=== Target Recovery Summary (Any Target Found) ===\n\n")
+kable(
+  summary_df %>%
+    select(threshold, n_drugs,
+           en_any_pct, en_any_n,
+           dsen_shared_any_pct, dsen_shared_any_n,
+           dsen_tissue_any_pct, dsen_tissue_any_n,
+           dsen_combined_any_pct, dsen_combined_any_n),
+  col.names = c("Threshold", "Drugs", "EN %", "EN n",
+                "Shared %", "Shared n",
+                "Tissue %", "Tissue n",
+                "Combined %", "Combined n"),
+  caption = "Target recovery rates: any known target found among selected features"
+)
+```
+
+## Tissue-Only Recoveries
+
+Drugs where the target was found exclusively in tissue-specific blocks.
+
+```{r tissue-only}
+recovery_050 <- recovery_valid %>%
+  filter(threshold == 0.50)
+
+tissue_only <- recovery_050 %>%
+  filter(!dsen_shared_any & dsen_tissue_any)
+
+cat("=== Drugs with target found ONLY in tissue-specific block (threshold 0.50) ===\n")
+cat("Count:", nrow(tissue_only), "\n\n")
+
+if (nrow(tissue_only) > 0) {
+  kable(
+    tissue_only %>%
+      select(drug, n_targets, dsen_tissue_targets),
+    col.names = c("Drug", "# Targets", "Tissue-Specific Targets Found"),
+    caption = "Targets recovered exclusively from tissue-specific coefficients"
+  )
+}
+```
+
+## Shared-Only Recoveries
+
+Drugs where the target was found only in the shared block.
+
+```{r shared-only}
+shared_only <- recovery_050 %>%
+  filter(dsen_shared_any & !dsen_tissue_any)
+
+cat("=== Drugs with target found ONLY in shared block (threshold 0.50) ===\n")
+cat("Count:", nrow(shared_only), "\n\n")
+
+if (nrow(shared_only) > 0) {
+  kable(
+    shared_only %>%
+      select(drug, n_targets, dsen_shared_targets),
+    col.names = c("Drug", "# Targets", "Shared Targets Found"),
+    caption = "Targets recovered exclusively from shared coefficients"
+  )
+}
+```
+
+## Both Blocks
+
+```{r both-blocks}
+both_blocks <- recovery_050 %>%
+  filter(dsen_shared_any & dsen_tissue_any)
+
+cat("=== Drugs with target found in BOTH blocks (threshold 0.50) ===\n")
+cat("Count:", nrow(both_blocks), "\n\n")
+
+if (nrow(both_blocks) > 0) {
+  kable(
+    both_blocks %>%
+      select(drug, n_targets, dsen_shared_targets, dsen_tissue_targets),
+    col.names = c("Drug", "# Targets", "Shared Targets", "Tissue Targets"),
+    caption = "Targets recovered from both shared and tissue-specific coefficients"
+  )
+}
+```
+
+# Case Study Table
+
+Key drugs illustrating the shared vs tissue-specific pattern.
+
+```{r case-studies}
+# Define key drugs of interest
+key_drugs <- c("PLX-4720", "Dabrafenib", "Nutlin-3a(-)", "Nutlin-3a",
+               "NVP-TAE684", "Quizartinib", "Sunitinib",
+               "Navitoclax", "Ruxolitinib", "Fedratinib",
+               "Afatinib", "Cetuximab")
+
+case_studies <- recovery_050 %>%
+  filter(drug %in% key_drugs | dsen_combined_any) %>%
+  left_join(
+    targets_known %>%
+      filter(target_in_features) %>%
+      group_by(drug_name) %>%
+      summarize(known_targets = paste(unique(target_gene), collapse = "; "),
+                .groups = "drop"),
+    by = c("drug" = "drug_name")
+  ) %>%
+  mutate(
+    en_status = ifelse(en_any, "Yes", "No"),
+    shared_status = ifelse(dsen_shared_any, "Yes", "No"),
+    tissue_status = ifelse(dsen_tissue_any, "Yes", "No"),
+    combined_status = ifelse(dsen_combined_any, "Yes", "No")
+  ) %>%
+  select(drug, known_targets, en_status, shared_status, tissue_status,
+         en_targets_found, dsen_shared_targets, dsen_tissue_targets) %>%
+  arrange(desc(tissue_status), desc(shared_status))
+
+cat("=== Case Studies: Target Recovery by Block ===\n")
+kable(
+  case_studies,
+  col.names = c("Drug", "Known Targets", "EN", "Shared", "Tissue",
+                "EN Found", "Shared Found", "Tissue Found"),
+  caption = "Target recovery decomposition for key drugs (threshold = 0.50)"
+)
+```
+
+# Comparison with Ad-Hoc Analysis
+
+```{r adhoc-comparison}
+cat("=== Proper Analysis vs Ad-Hoc (threshold 0.50) ===\n\n")
+
+s <- summary_df %>% filter(threshold == 0.50)
+
+cat(sprintf("EN:             %d/%d drugs (%.1f%%)\n",
+            s$en_any_n, s$n_drugs, s$en_any_pct))
+cat(sprintf("DSEN shared:    %d/%d drugs (%.1f%%)\n",
+            s$dsen_shared_any_n, s$n_drugs, s$dsen_shared_any_pct))
+cat(sprintf("DSEN tissue:    %d/%d drugs (%.1f%%)\n",
+            s$dsen_tissue_any_n, s$n_drugs, s$dsen_tissue_any_pct))
+cat(sprintf("DSEN combined:  %d/%d drugs (%.1f%%)\n",
+            s$dsen_combined_any_n, s$n_drugs, s$dsen_combined_any_pct))
+
+cat("\nAd-hoc estimates (for reference):\n")
+cat("  EN: 4.9%, DSEN shared: 5.3%, DSEN tissue: 13.2%, Combined: 13.6%\n")
+cat("\nNote: ad-hoc used non-zero mean coefficients; proper uses freq >= 0.50\n")
+```
+
+# Save Results
+
+```{r save-results}
+# Per-drug results (threshold 0.50 for main table)
+v2_table_dir <- file.path(table_dir, "threshold_25_v2")
+dir.create(v2_table_dir, showWarnings = FALSE, recursive = TRUE)
+write_csv(recovery_050,
+          file.path(v2_table_dir, "target_recovery_extended.csv"))
+
+# Summary across thresholds
+write_csv(summary_df,
+          file.path(v2_table_dir, "target_recovery_extended_summary.csv"))
+
+# Full R objects
+v2_dsen_dir <- here("results", "dsen_results", "threshold_25_v2")
+dir.create(v2_dsen_dir, showWarnings = FALSE, recursive = TRUE)
+save(recovery_df, summary_df, feature_info, rppa_mapping,
+     file = file.path(v2_dsen_dir, "tissue_target_recovery.Rda"))
+
+cat("Results saved.\n")
+```
+
+# Session Info
+
+```{r session-info}
+sessionInfo()
+```

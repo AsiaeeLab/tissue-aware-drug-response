@@ -1,0 +1,9 @@
+Metric,Value
+Total drugs analyzed,265
+Mean samples per drug,641
+Mean tissues per drug,11.2
+---,---
+DSEN win rate,92.5%
+Mean MSE improvement,4.95%
+Median MSE improvement,3.95%
+Max improvement,22.7% (GNF-2)

@@ -1,0 +1,200 @@
+---
+title: "Data Preparation and Validation"
+author: "Amir Asiaee"
+date: "`r Sys.Date()`"
+output:
+  html_document:
+    theme: flatly
+    highlight: tango
+    toc: true
+    toc_float: true
+    number_sections: true
+    code_folding: show
+    df_print: paged
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(
+  echo = TRUE,
+  warning = FALSE,
+  message = FALSE,
+  fig.width = 10,
+  fig.height = 6
+)
+```
+
+# Executive Summary
+
+## Background
+
+This notebook loads and validates the pre-processed drug response data (`ccle.Rda` and
+`Sanger.Rdata`) that are used throughout this project. These files were generated from
+raw CCLE/GDSC data using code archived in `archive/code_legacy/30-replication.Rmd`.
+
+## Data Sources
+
+- **ccle.Rda**: Contains predictor matrix `x` (genomic features), response matrix `y`
+  (drug sensitivity), and cell line selector `cls`
+- **Sanger.Rdata**: Contains the full Sanger/GDSC drug response data with tissue annotations
+
+See `doc/DATA_PROVENANCE.md` for detailed documentation of how these files were created.
+
+# Setup
+
+```{r load-packages}
+library(here)
+library(tidyverse)
+```
+
+```{r load-paths}
+source(here("methods", "00_paths.R"))
+```
+
+# Load Data
+
+## Load ccle.Rda
+
+```{r load-ccle}
+ccle_file <- file.path(paths$clean, "ccle.Rda")
+
+if (!file.exists(ccle_file)) {
+  stop("ccle.Rda not found in ", paths$clean,
+       "\nSee doc/DATA_PROVENANCE.md for instructions")
+}
+
+load(ccle_file)
+message("Loaded ccle.Rda successfully")
+```
+
+## Load Sanger.Rdata
+
+```{r load-sanger}
+sanger_file <- file.path(paths$clean, "Sanger.Rdata")
+
+if (!file.exists(sanger_file)) {
+  stop("Sanger.Rdata not found in ", paths$clean,
+       "\nSee doc/DATA_PROVENANCE.md for instructions")
+}
+
+load(sanger_file)
+message("Loaded Sanger.Rdata successfully")
+```
+
+# Data Validation
+
+## Predictor Matrix (x)
+
+```{r validate-x}
+cat("Predictor matrix dimensions:\n")
+cat(sprintf("  Samples (cell lines): %d\n", nrow(x)))
+cat(sprintf("  Features: %d\n", ncol(x)))
+
+# Feature type breakdown
+feature_types <- data.frame(
+  Type = c("Expression", "Mutation", "Copy Number", "Protein (RPPA)", "Other"),
+  Count = c(
+    sum(grepl("_Expr$", colnames(x))),
+    sum(grepl("_mut\\.", colnames(x))),
+    sum(grepl("_CN$", colnames(x))),
+    sum(!grepl("_Expr$|_mut\\.|_CN$", colnames(x)) &
+        grepl("_|^[A-Z]+$", colnames(x))),
+    0  # Will calculate as remainder
+  )
+)
+feature_types$Count[5] <- ncol(x) - sum(feature_types$Count[1:4])
+
+knitr::kable(feature_types, caption = "Feature Type Breakdown")
+```
+
+## Response Matrix (y)
+
+```{r validate-y}
+cat("Response matrix dimensions:\n")
+cat(sprintf("  Samples (cell lines): %d\n", nrow(y)))
+cat(sprintf("  Drugs: %d\n", ncol(y)))
+
+# Missing data summary
+missing_pct <- mean(is.na(y)) * 100
+cat(sprintf("\nMissing values: %.1f%%\n", missing_pct))
+
+# Samples per drug
+samples_per_drug <- colSums(!is.na(y))
+cat(sprintf("\nSamples per drug:\n"))
+cat(sprintf("  Min: %d\n", min(samples_per_drug)))
+cat(sprintf("  Median: %d\n", median(samples_per_drug)))
+cat(sprintf("  Max: %d\n", max(samples_per_drug)))
+```
+
+## Sanger Object
+
+```{r validate-sanger}
+cat("Sanger object contents:\n")
+cat(sprintf("  Drug response (dat): %d x %d\n", nrow(Sanger$dat), ncol(Sanger$dat)))
+cat(sprintf("  IC50 values: %d x %d\n", nrow(Sanger$ic50), ncol(Sanger$ic50)))
+cat(sprintf("  Cell lines with data: %d\n", sum(Sanger$cls)))
+
+# Tissue distribution
+if (!is.null(Sanger$tissue)) {
+  tissue_counts <- sort(table(Sanger$tissue), decreasing = TRUE)
+  cat(sprintf("\nTissue types: %d\n", length(tissue_counts)))
+  cat("\nTop 10 tissues:\n")
+  print(head(tissue_counts, 10))
+} else {
+  cat("\nNote: Tissue information not available in Sanger object\n")
+}
+```
+
+# Cell Line Overlap
+
+```{r cell-line-overlap}
+# Check overlap between x and Sanger
+x_samples <- rownames(x)
+sanger_samples <- rownames(Sanger$dat)
+
+common_samples <- intersect(x_samples, sanger_samples)
+cat(sprintf("Cell lines in predictor matrix: %d\n", length(x_samples)))
+cat(sprintf("Cell lines in Sanger: %d\n", length(sanger_samples)))
+cat(sprintf("Common cell lines: %d\n", length(common_samples)))
+```
+
+# Drug List
+
+```{r drug-list}
+drugs <- colnames(Sanger$dat)
+cat(sprintf("Total drugs: %d\n", length(drugs)))
+cat("\nFirst 20 drugs:\n")
+print(head(drugs, 20))
+```
+
+# Data Quality Checks
+
+```{r quality-checks}
+# Check for any all-NA rows or columns in predictors
+na_rows <- rowSums(is.na(x)) == ncol(x)
+na_cols <- colSums(is.na(x)) == nrow(x)
+
+cat("Quality checks:\n")
+cat(sprintf("  All-NA rows in x: %d\n", sum(na_rows)))
+cat(sprintf("  All-NA columns in x: %d\n", sum(na_cols)))
+
+# Check for zero-variance features
+zero_var <- apply(x, 2, var, na.rm = TRUE) == 0
+cat(sprintf("  Zero-variance features: %d\n", sum(zero_var, na.rm = TRUE)))
+```
+
+# Summary
+
+The data has been loaded and validated successfully. Key statistics:
+
+- **`r nrow(x)`** cell lines with **`r ncol(x)`** genomic features
+- **`r ncol(Sanger$dat)`** drugs tested
+- **`r length(common_samples)`** cell lines with both genomic and drug response data
+- **`r if(!is.null(Sanger$tissue)) length(unique(Sanger$tissue)) else "N/A"`** tissue types
+
+The data is ready for downstream analysis.
+
+# Session Info
+
+```{r session-info}
+sessionInfo()
+```

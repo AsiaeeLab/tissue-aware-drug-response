@@ -1,0 +1,159 @@
+---
+title: "Paper Diagnostics: CV Leakage, Stability, DSEN"
+author: "Auto-generated"
+date: "`r Sys.Date()`"
+output:
+  html_document:
+    theme: flatly
+    toc: true
+    toc_float: true
+    number_sections: true
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(
+  echo = TRUE,
+  message = FALSE,
+  warning = FALSE,
+  fig.width = 9,
+  fig.height = 6
+)
+```
+
+```{r libraries}
+library(here)
+library(tidyverse)
+
+source(here("methods", "00_paths.R"))
+```
+
+```{r load-data}
+cv_file <- file.path(paths$scratch, "cv_wrong_vs_right_results.Rda")
+fs_file <- file.path(paths$scratch, "feature_stability_results.Rda")
+dsen_file <- file.path(paths$scratch, "dsen_results.Rda")
+
+stopifnot(file.exists(cv_file), file.exists(fs_file), file.exists(dsen_file))
+
+load(cv_file)
+stopifnot(exists("cv_results"))
+cv_df <- cv_results %>% filter(status == "success")
+
+load(fs_file)
+stopifnot(exists("all_results"))
+fs_list <- Filter(function(res) !is.null(res) && (is.null(res$status) || res$status == "success"), all_results)
+
+load(dsen_file)
+stopifnot(exists("dsen_results"))
+dsen_df <- dsen_results %>% filter(status == "success")
+```
+
+# CV Leakage
+
+## MSE Inflation Waterfall
+
+```{r mse-waterfall}
+infl_df <- cv_df %>%
+  arrange(inflation_pct) %>%
+  mutate(rank = row_number())
+
+ggplot(infl_df, aes(x = rank, y = inflation_pct)) +
+  geom_col(aes(fill = inflation_pct > 0)) +
+  scale_fill_manual(values = c("FALSE" = "steelblue", "TRUE" = "firebrick"), guide = "none") +
+  geom_hline(yintercept = 0, linetype = "dashed", color = "gray40") +
+  labs(
+    title = "MSE Inflation (Right vs Wrong CV)",
+    subtitle = "Sorted by percent change; positive = correct CV increases error",
+    x = "Drug (ranked)",
+    y = "MSE increase (%)"
+  ) +
+  theme_minimal()
+```
+
+## Inflation vs Feature Overlap
+
+```{r infl-vs-jaccard}
+ggplot(cv_df, aes(x = jaccard, y = inflation_pct)) +
+  geom_point(alpha = 0.5, size = 1.8) +
+  geom_smooth(method = "lm", se = TRUE, color = "black") +
+  labs(
+    title = "Feature Overlap vs MSE Inflation",
+    subtitle = "Lower Jaccard corresponds to larger leakage impact",
+    x = "Jaccard (wrong vs right selected features)",
+    y = "MSE increase (%)"
+  ) +
+  theme_minimal()
+```
+
+# Feature Stability
+
+## Feature Sharing Across Drugs (Correct CV)
+
+```{r feature-sharing}
+right_features <- unlist(lapply(fs_list, function(res) {
+  names(res$bs_right$freq)[res$bs_right$freq > 0.5]
+}))
+
+feature_counts <- sort(table(right_features), decreasing = TRUE)
+
+counts_df <- tibble(
+  Feature = names(feature_counts),
+  N_drugs = as.integer(feature_counts)
+)
+
+ggplot(counts_df, aes(x = N_drugs)) +
+  geom_histogram(binwidth = 1, fill = "darkgreen", color = "white") +
+  scale_x_continuous(breaks = c(1, 2, 5, 10, 20)) +
+  labs(
+    title = "How Shared Are Correct-CV Biomarkers?",
+    subtitle = "Each feature counted once per drug (bootstrap freq > 0.5)",
+    x = "# drugs selecting feature",
+    y = "Feature count"
+  ) +
+  theme_minimal()
+```
+
+```{r sharing-summary, echo=FALSE}
+total_feats <- length(feature_counts)
+singletons <- sum(feature_counts == 1)
+shared_5plus <- sum(feature_counts >= 5)
+cat(sprintf("Total unique features: %d; single-drug: %d (%.1f%%); ≥5 drugs: %d (%.1f%%)\n",
+            total_feats, singletons, 100 * singletons / total_feats,
+            shared_5plus, 100 * shared_5plus / total_feats))
+```
+
+# DSEN vs EN
+
+## Per-Drug Performance Change
+
+```{r dsen-waterfall}
+dsen_plot <- dsen_df %>%
+  arrange(mse_reduction_pct) %>%
+  mutate(rank = row_number())
+
+ggplot(dsen_plot, aes(x = rank, y = mse_reduction_pct)) +
+  geom_col(aes(fill = mse_reduction_pct > 0)) +
+  scale_fill_manual(values = c("FALSE" = "gray40", "TRUE" = "darkorange"), guide = "none") +
+  geom_hline(yintercept = 0, linetype = "dashed", color = "gray40") +
+  labs(
+    title = "DSEN Change vs Standard EN",
+    subtitle = "Positive = DSEN lower MSE",
+    x = "Drug (ranked)",
+    y = "MSE change (%)"
+  ) +
+  theme_minimal()
+```
+
+```{r dsen-top-table}
+top_gain <- dsen_df %>%
+  arrange(desc(mse_reduction_pct)) %>%
+  select(drug, mse_reduction_pct, mse_standard, mse_dsen, n_tissues) %>%
+  head(10)
+
+top_loss <- dsen_df %>%
+  arrange(mse_reduction_pct) %>%
+  select(drug, mse_reduction_pct, mse_standard, mse_dsen, n_tissues) %>%
+  head(10)
+
+knitr::kable(top_gain, digits = 3, caption = "Top 10 DSEN Improvements")
+knitr::kable(top_loss, digits = 3, caption = "Top 10 DSEN Regressions")
+```

@@ -1,0 +1,791 @@
+---
+title: "Publication Figures for Nature Methods"
+author: "Amir Asiaee"
+date: "`r Sys.Date()`"
+output:
+  html_document:
+    theme: flatly
+    highlight: tango
+    toc: true
+    toc_float: true
+    number_sections: true
+    code_folding: show
+    df_print: paged
+---
+
+<!--
+  To reproduce DSEN results from scratch:
+  1. Run methods/run_dsen_production.R with MIN_SAMPLES_PER_TISSUE=25
+  2. Run methods/run_dsen_bootstrap.R
+  3. Run experiments/11_tissue_target_recovery.Rmd
+
+  To regenerate just the publication figures, run:
+    Rscript experiments/generate_v2_figures.R
+
+  This Rmd notebook loads from results/dsen_results/threshold_25_v2/ and
+  results/tables/threshold_25_v2/ (the v2 DSEN results with bug fixes).
+-->
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(
+  echo = TRUE,
+  warning = FALSE,
+  message = FALSE,
+  fig.width = 10,
+  fig.height = 6,
+  dpi = 300
+)
+```
+
+# Executive Summary
+
+This notebook generates publication-quality figures for the manuscript submitted to
+Nature Communications. The paper has three main contributions:
+
+1. **Data Leakage Identification**: Demonstrating that published CV implementations
+   contain data leakage (feature selection before train/test split)
+
+2. **Correct Implementation**: Providing proper CV with per-fold feature selection
+   and correct SE calculation (not SD)
+
+3. **DSEN Method**: Tissue-aware elastic net that improves prediction for 93% of drugs
+
+All figures are saved in both PDF (for publication) and PNG (for preview) formats
+in `results/figures/`.
+
+# Setup
+
+```{r load-packages}
+library(here)
+library(tidyverse)
+library(ggpubr)
+library(patchwork)
+library(scales)
+library(viridis)
+library(RColorBrewer)
+library(knitr)
+```
+
+```{r load-paths}
+source(here("methods", "00_paths.R"))
+source(here("methods", "04_plot_utils.R"))
+```
+
+```{r output-dirs}
+fig_dir <- file.path(paths$results, "figures")
+table_dir <- file.path(paths$results, "tables")
+for (d in c(fig_dir, table_dir)) {
+  if (!dir.exists(d)) dir.create(d, recursive = TRUE)
+}
+```
+
+# Color Scheme
+
+```{r color-scheme}
+# Define consistent publication color scheme
+# Colorblind-friendly palette based on ColorBrewer
+colors <- list(
+  # Main comparisons
+  wrong = "#E41A1C",       # Red - incorrect/leakage
+  right = "#377EB8",       # Blue - correct
+  dsen = "#FF7F00",        # Orange - DSEN
+  en = "#4DAF4A",          # Green - standard EN
+
+  # Secondary
+  neutral = "#666666",     # Gray
+  highlight = "#984EA3",   # Purple
+
+  # Gradients
+  diverging_low = "#2166AC",
+  diverging_mid = "#F7F7F7",
+  diverging_high = "#B2182B"
+)
+
+# Custom theme for publication
+theme_pub <- function(base_size = 12) {
+  theme_minimal(base_size = base_size) +
+    theme(
+      panel.grid.minor = element_blank(),
+      panel.border = element_rect(color = "gray80", fill = NA, linewidth = 0.5),
+      axis.text = element_text(color = "black"),
+      axis.ticks = element_line(color = "gray80"),
+      legend.position = "bottom",
+      plot.title = element_text(face = "bold", hjust = 0),
+      plot.subtitle = element_text(color = "gray40"),
+      strip.background = element_rect(fill = "gray95"),
+      strip.text = element_text(face = "bold")
+    )
+}
+```
+
+# Load All Pre-computed Results
+
+```{r load-results}
+# DSEN Production Results (v2: threshold_25_v2 with bug fixes)
+dsen_file <- here("results", "tables", "threshold_25_v2", "dsen_full_results.csv")
+if (file.exists(dsen_file)) {
+  dsen_df <- read_csv(dsen_file, show_col_types = FALSE) %>%
+    filter(status == "success")
+  cat("Loaded DSEN results:", nrow(dsen_df), "drugs\n")
+} else {
+  stop("DSEN results not found. Run methods/run_dsen_production.R first.")
+}
+
+# DSEN Bootstrap Results (v2)
+bootstrap_file <- here("results", "dsen_results", "threshold_25_v2", "dsen_bootstrap_results.Rda")
+if (file.exists(bootstrap_file)) {
+  load(bootstrap_file)
+  bootstrap_results <- all_results
+  rm(all_results)
+  cat("Loaded bootstrap results:", length(bootstrap_results), "drugs\n")
+} else {
+  bootstrap_results <- NULL
+  cat("Bootstrap results not found - some figures will be limited\n")
+}
+
+# Try to load CV wrong vs right results (if available)
+cv_files <- c(
+  file.path(paths$scratch, "cv_wrong_vs_right_results.Rda"),
+  here("results", "cv_results", "cv_comparison_full.Rda")
+)
+cv_file <- cv_files[file.exists(cv_files)][1]
+
+cv_df <- NULL
+if (!is.na(cv_file)) {
+  tryCatch({
+    load(cv_file)
+    if (exists("cv_results")) {
+      cv_df <- cv_results %>% filter(status == "success")
+    } else if (exists("all_results")) {
+      cv_df <- map_dfr(all_results, function(res) {
+        tryCatch({
+          tibble(
+            drug = res$drug,
+            n_samples = res$n_samples,
+            mse_wrong = res$comparison$mse_wrong,
+            mse_right = res$comparison$mse_right,
+            mse_pct_increase = res$comparison$mse_pct_increase,
+            jaccard = res$comparison$jaccard
+          )
+        }, error = function(e) NULL)
+      })
+      rm(all_results)
+    }
+    # Validate cv_df has required columns
+    if (!is.null(cv_df) && nrow(cv_df) > 0) {
+      required_cols <- c("mse_wrong", "mse_right", "mse_pct_increase")
+      if (!all(required_cols %in% names(cv_df))) {
+        cv_df <- NULL
+      }
+    }
+    if (!is.null(cv_df)) cat("Loaded CV comparison results:", nrow(cv_df), "drugs\n")
+  }, error = function(e) {
+    cv_df <<- NULL
+    cat("Error loading CV results:", e$message, "\n")
+  })
+}
+
+if (is.null(cv_df)) {
+  cat("CV comparison results not found or invalid - leakage figures will be skipped\n")
+}
+```
+
+# Figure 1: DSEN Performance Overview (Main Figure)
+
+## Rationale
+
+Figure 1 is the main result figure showing DSEN improvement over standard EN.
+We present a three-panel figure: (A) sorted bar chart showing per-drug improvement,
+(B) distribution of improvements, (C) scatter of EN MSE vs DSEN MSE.
+
+```{r fig1-prep}
+# Prepare data
+plot_df <- dsen_df %>%
+  arrange(pct_improvement) %>%
+  mutate(
+    rank = row_number(),
+    direction = ifelse(pct_improvement > 0, "DSEN Better", "EN Better")
+  )
+
+# Statistics for annotation
+n_dsen_better <- sum(dsen_df$pct_improvement > 0)
+n_total <- nrow(dsen_df)
+pct_dsen_wins <- 100 * n_dsen_better / n_total
+mean_improvement <- mean(dsen_df$pct_improvement)
+median_improvement <- median(dsen_df$pct_improvement)
+```
+
+## Panel A: DSEN Improvement Waterfall
+
+```{r fig1a, fig.width=10, fig.height=5}
+fig1a <- ggplot(plot_df, aes(x = rank, y = pct_improvement, fill = direction)) +
+  geom_col(width = 1, color = NA) +
+  scale_fill_manual(
+    values = c("DSEN Better" = colors$dsen, "EN Better" = colors$en),
+    name = NULL
+  ) +
+  geom_hline(yintercept = 0, color = "gray20", linewidth = 0.5) +
+  geom_hline(yintercept = mean_improvement,
+             linetype = "dashed", color = colors$highlight, linewidth = 0.7) +
+  annotate("text", x = 20, y = mean_improvement + 1.5,
+           label = sprintf("Mean: %.1f%%", mean_improvement),
+           color = colors$highlight, hjust = 0, size = 3.5) +
+  labs(
+    x = "Drug (ranked by improvement)",
+    y = "MSE Improvement (%)",
+    title = NULL
+  ) +
+  scale_x_continuous(expand = c(0.01, 0)) +
+  theme_pub() +
+  theme(legend.position = c(0.85, 0.15))
+
+print(fig1a)
+```
+
+## Panel B: Improvement Distribution
+
+```{r fig1b, fig.width=5, fig.height=5}
+fig1b <- ggplot(dsen_df, aes(x = pct_improvement)) +
+  geom_histogram(aes(y = after_stat(density)),
+                 bins = 35, fill = colors$dsen, color = "white", alpha = 0.8) +
+  geom_density(color = "darkorange4", linewidth = 0.8) +
+  geom_vline(xintercept = 0, linetype = "dashed", color = "gray30", linewidth = 0.7) +
+  geom_vline(xintercept = mean_improvement, color = colors$highlight, linewidth = 0.7) +
+  annotate("text", x = mean_improvement + 1, y = 0.11,
+           label = sprintf("Mean: %.1f%%", mean_improvement),
+           color = colors$highlight, hjust = 0, size = 3.5) +
+  annotate("text", x = -8, y = 0.11,
+           label = sprintf("DSEN wins: %.0f%%", pct_dsen_wins),
+           color = colors$dsen, hjust = 0, size = 3.5, fontface = "bold") +
+  labs(
+    x = "MSE Improvement (%)",
+    y = "Density",
+    title = NULL
+  ) +
+  scale_x_continuous(limits = c(-12, 25)) +
+  theme_pub() +
+  theme(legend.position = "none")
+
+print(fig1b)
+```
+
+## Panel C: EN vs DSEN Scatter
+
+```{r fig1c, fig.width=5, fig.height=5}
+fig1c <- ggplot(dsen_df, aes(x = mse_en, y = mse_dsen)) +
+  geom_abline(slope = 1, intercept = 0, linetype = "dashed", color = "gray50") +
+  geom_point(aes(color = pct_improvement > 0), alpha = 0.6, size = 1.5) +
+  scale_color_manual(
+    values = c("TRUE" = colors$dsen, "FALSE" = colors$en),
+    labels = c("TRUE" = "DSEN Better", "FALSE" = "EN Better"),
+    name = NULL
+  ) +
+  labs(
+    x = "MSE (Standard EN)",
+    y = "MSE (DSEN)",
+    title = NULL
+  ) +
+  coord_fixed(xlim = c(0, 0.12), ylim = c(0, 0.12)) +
+  theme_pub() +
+  theme(legend.position = c(0.75, 0.15))
+
+print(fig1c)
+```
+
+## Combined Figure 1
+
+```{r fig1-combined, fig.width=14, fig.height=5}
+fig1_combined <- fig1a + fig1b + fig1c +
+  plot_annotation(
+    tag_levels = "A",
+    title = "DSEN Improves Drug Response Prediction",
+    subtitle = sprintf("Analysis of %d drugs | DSEN outperforms standard EN for %.0f%% of drugs",
+                       n_total, pct_dsen_wins),
+    theme = theme(
+      plot.title = element_text(face = "bold", size = 14),
+      plot.subtitle = element_text(color = "gray40", size = 11)
+    )
+  ) &
+  theme(plot.tag = element_text(face = "bold", size = 14))
+
+print(fig1_combined)
+
+# Save
+ggsave(file.path(fig_dir, "fig1_dsen_overview.pdf"),
+       fig1_combined, width = 14, height = 5)
+ggsave(file.path(fig_dir, "fig1_dsen_overview.png"),
+       fig1_combined, width = 14, height = 5, dpi = 300)
+```
+
+# Figure 2: Top Performers and Biological Context
+
+## Rationale
+
+Highlight drugs where DSEN shows the largest improvement. These drugs likely have
+strong tissue-specific biology, validating the DSEN approach.
+
+```{r fig2, fig.width=10, fig.height=7}
+# Top 15 drugs
+top_drugs <- dsen_df %>%
+  arrange(desc(pct_improvement)) %>%
+  head(15) %>%
+  mutate(drug = fct_reorder(drug, pct_improvement))
+
+fig2 <- ggplot(top_drugs, aes(x = drug, y = pct_improvement)) +
+  geom_col(fill = colors$dsen, alpha = 0.85) +
+  geom_text(aes(label = sprintf("%.1f%%", pct_improvement)),
+            hjust = -0.1, size = 3.5) +
+  coord_flip() +
+  labs(
+    title = "Top 15 Drugs with Greatest DSEN Improvement",
+    subtitle = "Drugs where tissue-specific modeling provides largest benefit over standard EN",
+    x = NULL,
+    y = "MSE Improvement (%)"
+  ) +
+  scale_y_continuous(expand = expansion(mult = c(0, 0.15))) +
+  theme_pub(base_size = 12)
+
+print(fig2)
+
+ggsave(file.path(fig_dir, "fig2_top_performers.pdf"),
+       fig2, width = 10, height = 7)
+ggsave(file.path(fig_dir, "fig2_top_performers.png"),
+       fig2, width = 10, height = 7, dpi = 300)
+```
+
+## Top Performers Table
+
+```{r top-table}
+top_table <- dsen_df %>%
+  arrange(desc(pct_improvement)) %>%
+  head(15) %>%
+  select(drug, n_samples, n_tissues, mse_en, mse_dsen, pct_improvement)
+
+kable(top_table, digits = 3,
+      col.names = c("Drug", "Samples", "Tissues", "MSE (EN)", "MSE (DSEN)", "Improvement (%)"),
+      caption = "Top 15 Drugs with Greatest DSEN Improvement")
+
+write_csv(top_table, file.path(table_dir, "top_dsen_performers.csv"))
+```
+
+# Figure 3: DSEN vs Drug Difficulty
+
+## Rationale
+
+Examine whether DSEN provides more benefit for "hard" drugs (high baseline MSE).
+
+```{r fig3, fig.width=10, fig.height=5}
+fig3 <- ggplot(dsen_df, aes(x = mse_en, y = pct_improvement)) +
+  geom_hline(yintercept = 0, linetype = "dashed", color = "gray50") +
+  geom_point(alpha = 0.5, size = 2, color = colors$neutral) +
+  geom_smooth(method = "loess", se = TRUE, span = 0.8,
+              color = colors$dsen, fill = colors$dsen, alpha = 0.2) +
+  labs(
+    title = "DSEN Improvement vs Drug Prediction Difficulty",
+    subtitle = "Hard-to-predict drugs (high MSE) show similar benefit from tissue-aware modeling",
+    x = "Baseline MSE (Standard EN)",
+    y = "DSEN Improvement (%)"
+  ) +
+  theme_pub()
+
+print(fig3)
+
+ggsave(file.path(fig_dir, "fig3_improvement_vs_difficulty.pdf"),
+       fig3, width = 10, height = 5)
+```
+
+# Figure 4: Feature Selection Comparison
+
+## Rationale
+
+DSEN provides sparser models. This figure shows the feature count reduction
+and its consistency across drugs.
+
+```{r fig4-prep}
+if (!is.null(bootstrap_results)) {
+  feature_df <- map_dfr(bootstrap_results, function(r) {
+    tibble(
+      drug = r$drug,
+      n_en = sum(r$en_bootstrap$cnt > 0),
+      n_dsen = sum(r$dsen_bootstrap$cnt > 0)
+    )
+  }) %>%
+    mutate(
+      reduction = n_en - n_dsen,
+      reduction_pct = 100 * reduction / n_en
+    )
+
+  has_feature_data <- TRUE
+} else {
+  has_feature_data <- FALSE
+}
+```
+
+```{r fig4, fig.width=12, fig.height=5, eval=has_feature_data}
+# Panel A: EN vs DSEN feature count scatter
+fig4a <- ggplot(feature_df, aes(x = n_en, y = n_dsen)) +
+  geom_abline(slope = 1, intercept = 0, linetype = "dashed", color = "gray50") +
+  geom_point(alpha = 0.5, size = 2, color = colors$neutral) +
+  geom_smooth(method = "lm", se = TRUE, color = colors$dsen, fill = colors$dsen, alpha = 0.2) +
+  labs(
+    x = "Features (Standard EN)",
+    y = "Features (DSEN)",
+    title = NULL
+  ) +
+  coord_fixed() +
+  theme_pub()
+
+# Panel B: Feature reduction distribution
+fig4b <- ggplot(feature_df, aes(x = reduction_pct)) +
+  geom_histogram(bins = 35, fill = colors$dsen, color = "white", alpha = 0.8) +
+  geom_vline(xintercept = mean(feature_df$reduction_pct),
+             color = colors$highlight, linewidth = 0.8) +
+  geom_vline(xintercept = 0, linetype = "dashed", color = "gray30") +
+  annotate("text", x = mean(feature_df$reduction_pct) + 2, y = 25,
+           label = sprintf("Mean: %.0f%%", mean(feature_df$reduction_pct)),
+           color = colors$highlight, hjust = 0, size = 4) +
+  labs(
+    x = "Feature Count Reduction (%)",
+    y = "Number of Drugs",
+    title = NULL
+  ) +
+  theme_pub()
+
+# Combined
+fig4_combined <- fig4a + fig4b +
+  plot_annotation(
+    tag_levels = "A",
+    title = "DSEN Provides Sparser Feature Selection",
+    subtitle = sprintf("DSEN selects %.0f%% fewer features than standard EN on average",
+                       mean(feature_df$reduction_pct)),
+    theme = theme(
+      plot.title = element_text(face = "bold", size = 14),
+      plot.subtitle = element_text(color = "gray40", size = 11)
+    )
+  ) &
+  theme(plot.tag = element_text(face = "bold", size = 14))
+
+print(fig4_combined)
+
+ggsave(file.path(fig_dir, "fig4_feature_sparsity.pdf"),
+       fig4_combined, width = 12, height = 5)
+ggsave(file.path(fig_dir, "fig4_feature_sparsity.png"),
+       fig4_combined, width = 12, height = 5, dpi = 300)
+```
+
+# Figure 5: Lambda Ratio Distribution
+
+## Rationale
+
+The lambda ratio controls the balance between shared and tissue-specific coefficients.
+This figure shows that most drugs prefer a ratio of 2 (moderate emphasis on shared).
+
+```{r fig5, fig.width=8, fig.height=5}
+lamrat_summary <- dsen_df %>%
+  count(lamrat_dsen, name = "n_drugs") %>%
+  mutate(pct = 100 * n_drugs / sum(n_drugs))
+
+fig5 <- ggplot(dsen_df, aes(x = factor(lamrat_dsen))) +
+  geom_bar(fill = colors$dsen, alpha = 0.85) +
+  geom_text(stat = "count", aes(label = after_stat(count)), vjust = -0.3, size = 4) +
+  labs(
+    title = "Distribution of Optimal Lambda Ratios",
+    subtitle = "Lambda ratio controls balance between shared and tissue-specific coefficients\n(Higher = stronger preference for shared features)",
+    x = "Lambda Ratio",
+    y = "Number of Drugs"
+  ) +
+  theme_pub()
+
+print(fig5)
+
+ggsave(file.path(fig_dir, "fig5_lamrat_distribution.pdf"),
+       fig5, width = 8, height = 5)
+```
+
+# Supplementary Figures
+
+## Figure S1: All Drugs Performance Table
+
+```{r figs1-table}
+# Full results table
+full_table <- dsen_df %>%
+  arrange(desc(pct_improvement)) %>%
+  select(drug, n_samples, n_tissues, mse_en, mse_dsen, pct_improvement, lamrat_dsen)
+
+kable(head(full_table, 30), digits = 3,
+      caption = "DSEN Results Summary (Top 30 of 265 drugs)")
+
+write_csv(full_table, file.path(table_dir, "dsen_full_results.csv"))
+```
+
+## Figure S2: Win Rate by Quartile
+
+```{r figs2, fig.width=10, fig.height=5}
+dsen_df_quartile <- dsen_df %>%
+  mutate(
+    difficulty_q = cut(mse_en,
+                       breaks = quantile(mse_en, probs = c(0, 0.25, 0.5, 0.75, 1)),
+                       labels = c("Q1 (Easy)", "Q2", "Q3", "Q4 (Hard)"),
+                       include.lowest = TRUE),
+    tissue_q = cut(n_tissues,
+                   breaks = c(0, 27, 28, 29, 30),
+                   labels = c("<27", "27-28", "29", "30"),
+                   include.lowest = TRUE)
+  )
+
+# Win rate by difficulty
+quartile_summary <- dsen_df_quartile %>%
+  group_by(difficulty_q) %>%
+  summarize(
+    n_drugs = n(),
+    win_rate = mean(pct_improvement > 0),
+    mean_improvement = mean(pct_improvement),
+    .groups = "drop"
+  )
+
+figS2a <- ggplot(quartile_summary, aes(x = difficulty_q, y = win_rate)) +
+  geom_col(fill = colors$dsen, alpha = 0.85) +
+  geom_text(aes(label = sprintf("%.0f%%\n(n=%d)", 100*win_rate, n_drugs)),
+            vjust = -0.1, size = 3.5) +
+  geom_hline(yintercept = 0.5, linetype = "dashed", color = "gray50") +
+  scale_y_continuous(labels = percent_format(), limits = c(0, 0.85)) +
+  labs(
+    x = "Drug Difficulty Quartile",
+    y = "DSEN Win Rate",
+    title = "DSEN Win Rate by Drug Difficulty"
+  ) +
+  theme_pub()
+
+# Win rate by tissue count
+tissue_summary <- dsen_df_quartile %>%
+  group_by(tissue_q) %>%
+  summarize(
+    n_drugs = n(),
+    win_rate = mean(pct_improvement > 0),
+    mean_improvement = mean(pct_improvement),
+    .groups = "drop"
+  )
+
+figS2b <- ggplot(tissue_summary, aes(x = tissue_q, y = win_rate)) +
+  geom_col(fill = colors$dsen, alpha = 0.85) +
+  geom_text(aes(label = sprintf("%.0f%%\n(n=%d)", 100*win_rate, n_drugs)),
+            vjust = -0.1, size = 3.5) +
+  geom_hline(yintercept = 0.5, linetype = "dashed", color = "gray50") +
+  scale_y_continuous(labels = percent_format(), limits = c(0, 0.85)) +
+  labs(
+    x = "Number of Tissues",
+    y = "DSEN Win Rate",
+    title = "DSEN Win Rate by Tissue Count"
+  ) +
+  theme_pub()
+
+figS2_combined <- figS2a + figS2b +
+  plot_annotation(
+    tag_levels = "A",
+    theme = theme(plot.title = element_text(face = "bold"))
+  )
+
+print(figS2_combined)
+
+ggsave(file.path(fig_dir, "figS2_winrate_by_quartile.pdf"),
+       figS2_combined, width = 10, height = 5)
+```
+
+## Figure S3: Shared vs Tissue-Specific Features
+
+```{r figs3, fig.width=10, fig.height=5, eval=has_feature_data}
+# Analyze shared vs tissue coefficients
+coef_df <- map_dfr(bootstrap_results, function(r) {
+  if (is.null(r$dsen_bootstrap$mean_coefs)) return(NULL)
+
+  mc <- r$dsen_bootstrap$mean_coefs
+  shared_n <- sum(mc[, "Shared"] != 0)
+
+  tissue_cols <- colnames(mc)[colnames(mc) != "Shared"]
+  tissue_n <- sum(rowSums(mc[, tissue_cols, drop = FALSE] != 0) > 0)
+
+  tibble(
+    drug = r$drug,
+    n_shared = shared_n,
+    n_tissue_specific = tissue_n
+  )
+})
+
+figS3a <- ggplot(coef_df, aes(x = n_shared, y = n_tissue_specific)) +
+  geom_abline(slope = 1, intercept = 0, linetype = "dashed", color = "gray50") +
+  geom_point(alpha = 0.5, size = 2, color = colors$neutral) +
+  labs(
+    x = "Shared Features",
+    y = "Tissue-Specific Features",
+    title = "Shared vs Tissue-Specific Features in DSEN"
+  ) +
+  theme_pub()
+
+# Drugs with 0 shared features
+n_no_shared <- sum(coef_df$n_shared == 0)
+
+figS3b <- ggplot(coef_df, aes(x = n_shared)) +
+  geom_histogram(bins = 30, fill = colors$dsen, color = "white", alpha = 0.8) +
+  geom_vline(xintercept = mean(coef_df$n_shared), color = colors$highlight, linewidth = 0.8) +
+  annotate("text", x = 0, y = 35,
+           label = sprintf("%d drugs (%.1f%%)\nhave 0 shared features",
+                          n_no_shared, 100*n_no_shared/nrow(coef_df)),
+           hjust = 0, color = colors$highlight, size = 3.5) +
+  labs(
+    x = "Number of Shared Features",
+    y = "Number of Drugs",
+    title = "Distribution of Shared Features per Drug"
+  ) +
+  theme_pub()
+
+figS3_combined <- figS3a + figS3b +
+  plot_annotation(tag_levels = "A")
+
+print(figS3_combined)
+
+ggsave(file.path(fig_dir, "figS3_shared_vs_tissue.pdf"),
+       figS3_combined, width = 10, height = 5)
+```
+
+# CV Leakage Figures (If Available)
+
+```{r cv-figures-check}
+has_cv_data <- !is.null(cv_df) && nrow(cv_df) > 0
+```
+
+## Figure S4: CV Leakage Impact (Conditional)
+
+```{r figs4, fig.width=12, fig.height=5, eval=has_cv_data}
+# Panel A: MSE inflation distribution
+figS4a <- ggplot(cv_df, aes(x = mse_pct_increase)) +
+  geom_histogram(bins = 35, fill = colors$right, color = "white", alpha = 0.8) +
+  geom_vline(xintercept = 0, linetype = "dashed", color = "gray30") +
+  geom_vline(xintercept = mean(cv_df$mse_pct_increase),
+             color = colors$wrong, linewidth = 0.8) +
+  annotate("text", x = mean(cv_df$mse_pct_increase) + 2, y = 20,
+           label = sprintf("Mean: %.1f%%", mean(cv_df$mse_pct_increase)),
+           color = colors$wrong, hjust = 0, size = 4) +
+  labs(
+    x = "MSE Increase (Correct vs Incorrect CV) (%)",
+    y = "Number of Drugs",
+    title = "Impact of CV Leakage on Performance Estimates"
+  ) +
+  theme_pub()
+
+# Panel B: Wrong vs Right MSE scatter
+figS4b <- ggplot(cv_df, aes(x = mse_wrong, y = mse_right)) +
+  geom_abline(slope = 1, intercept = 0, linetype = "dashed", color = "gray50") +
+  geom_point(aes(color = mse_right > mse_wrong), alpha = 0.5, size = 2) +
+  scale_color_manual(
+    values = c("TRUE" = colors$wrong, "FALSE" = colors$right),
+    labels = c("TRUE" = "Correct CV Higher (expected)", "FALSE" = "Incorrect CV Higher"),
+    name = NULL
+  ) +
+  labs(
+    x = "MSE (Incorrect CV - with leakage)",
+    y = "MSE (Correct CV - no leakage)",
+    title = "Comparison of MSE Estimates"
+  ) +
+  coord_fixed() +
+  theme_pub() +
+  theme(legend.position = c(0.7, 0.2))
+
+figS4_combined <- figS4a + figS4b +
+  plot_annotation(
+    tag_levels = "A",
+    title = "Data Leakage Inflates Apparent Performance",
+    subtitle = sprintf("%.0f%% of drugs show inflated performance when using incorrect CV",
+                       100 * mean(cv_df$mse_right > cv_df$mse_wrong))
+  )
+
+print(figS4_combined)
+
+ggsave(file.path(fig_dir, "figS4_cv_leakage.pdf"),
+       figS4_combined, width = 12, height = 5)
+```
+
+## Figure S5: Feature Stability (Jaccard) Distribution
+
+```{r figs5, fig.width=8, fig.height=5, eval=has_cv_data}
+if ("jaccard" %in% names(cv_df)) {
+  figS5 <- ggplot(cv_df, aes(x = jaccard)) +
+    geom_histogram(bins = 25, fill = colors$right, color = "white", alpha = 0.8) +
+    geom_vline(xintercept = mean(cv_df$jaccard, na.rm = TRUE),
+               color = colors$wrong, linewidth = 0.8) +
+    annotate("text", x = mean(cv_df$jaccard, na.rm = TRUE) + 0.02, y = 15,
+             label = sprintf("Mean: %.2f", mean(cv_df$jaccard, na.rm = TRUE)),
+             color = colors$wrong, hjust = 0, size = 4) +
+    annotate("text", x = 0.05, y = 20,
+             label = sprintf("%.0f%% have\nJaccard = 0",
+                            100 * mean(cv_df$jaccard == 0, na.rm = TRUE)),
+             hjust = 0, color = colors$wrong, size = 3.5) +
+    labs(
+      title = "Feature Selection Overlap: Correct vs Incorrect CV",
+      subtitle = "Low Jaccard indicates different features selected by each method",
+      x = "Jaccard Similarity (Feature Overlap)",
+      y = "Number of Drugs"
+    ) +
+    scale_x_continuous(limits = c(0, 1)) +
+    theme_pub()
+
+  print(figS5)
+
+  ggsave(file.path(fig_dir, "figS5_jaccard_distribution.pdf"),
+         figS5, width = 8, height = 5)
+}
+```
+
+# Summary Statistics Table
+
+```{r summary-table}
+summary_stats <- tribble(
+  ~Category, ~Metric, ~Value,
+  "Dataset", "Total drugs analyzed", as.character(nrow(dsen_df)),
+  "Dataset", "Mean samples per drug", sprintf("%.0f", mean(dsen_df$n_samples)),
+  "Dataset", "Mean tissues per drug", sprintf("%.1f", mean(dsen_df$n_tissues)),
+  "DSEN Performance", "DSEN win rate", sprintf("%.1f%%", pct_dsen_wins),
+  "DSEN Performance", "Mean improvement", sprintf("%.2f%%", mean_improvement),
+  "DSEN Performance", "Median improvement", sprintf("%.2f%%", median_improvement),
+  "DSEN Performance", "Max improvement", sprintf("%.1f%% (Imatinib)", max(dsen_df$pct_improvement)),
+  "DSEN Performance", "Min improvement", sprintf("%.1f%% (Crizotinib)", min(dsen_df$pct_improvement)),
+  "Feature Selection", "Mean EN features", sprintf("%.0f", ifelse(has_feature_data, mean(feature_df$n_en), NA)),
+  "Feature Selection", "Mean DSEN features", sprintf("%.0f", ifelse(has_feature_data, mean(feature_df$n_dsen), NA)),
+  "Feature Selection", "Feature reduction", sprintf("%.0f%%", ifelse(has_feature_data, mean(feature_df$reduction_pct), NA)),
+  "Parameters", "Alpha (all drugs)", "0.5",
+  "Parameters", "Most common lambda ratio", "2"
+)
+
+kable(summary_stats, caption = "Summary Statistics for Publication")
+
+write_csv(summary_stats, file.path(table_dir, "publication_summary_stats.csv"))
+```
+
+# Figure Manifest
+
+```{r manifest}
+manifest <- tribble(
+  ~Figure, ~Filename, ~Description,
+  "Figure 1", "fig1_dsen_overview.pdf", "Main DSEN result: waterfall, histogram, scatter",
+  "Figure 2", "fig2_top_performers.pdf", "Top 15 drugs with greatest DSEN improvement",
+  "Figure 3", "fig3_improvement_vs_difficulty.pdf", "DSEN improvement vs drug difficulty",
+  "Figure 4", "fig4_feature_sparsity.pdf", "Feature selection comparison (sparsity)",
+  "Figure 5", "fig5_lamrat_distribution.pdf", "Lambda ratio distribution",
+  "Figure S2", "figS2_winrate_by_quartile.pdf", "Win rate by difficulty/tissue quartile",
+  "Figure S3", "figS3_shared_vs_tissue.pdf", "Shared vs tissue-specific features",
+  "Figure S4", "figS4_cv_leakage.pdf", "CV leakage impact (if data available)",
+  "Figure S5", "figS5_jaccard_distribution.pdf", "Feature stability Jaccard"
+)
+
+kable(manifest, caption = "Figure Files Generated")
+
+write_csv(manifest, file.path(fig_dir, "figure_manifest.csv"))
+
+cat("\n=== All figures saved to ===\n")
+cat(fig_dir, "\n")
+```
+
+# Session Info
+
+```{r session-info}
+sessionInfo()
+```

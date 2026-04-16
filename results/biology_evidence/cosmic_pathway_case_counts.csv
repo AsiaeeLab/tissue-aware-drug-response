@@ -1,0 +1,139 @@
+drug,primary_pathway,n_cosmic_genes
+BX-912,Metabolism,10
+Refametinib,ERK MAPK signaling,9
+Amuvatinib,RTK signaling,8
+GSK1070916,Mitosis,8
+AKT inhibitor VIII,PI3K/MTOR signaling,7
+AR-42,Chromatin histone acetylation,7
+Elesclomol,Protein stability and degradation,7
+Bicalutamide_repl_150,Hormone-related,6
+Bleomycin (50 uM),DNA replication,6
+CI-1040,ERK MAPK signaling,6
+Crizotinib,RTK signaling,6
+Daporinad,Metabolism,6
+GSK429286A,Cytoskeleton,6
+Selumetinib_repl_1498,ERK MAPK signaling,6
+THZ-2-102-1,Cell cycle,6
+XAV939,WNT signaling,6
+AZD6482_repl_156,PI3K/MTOR signaling,5
+AZD7762,Cell cycle,5
+Afatinib_repl_1377,EGFR signaling,5
+CAY10603,Chromatin histone acetylation,5
+Dabrafenib,ERK MAPK signaling,5
+I-BET-762,Chromatin other,5
+NVP-BHG712,"Other, kinases",5
+Navitoclax,Apoptosis regulation,5
+QL-XI-92,Cytoskeleton,5
+CX-5461,Other,4
+Cyclopamine,Other,4
+Dacinostat,Chromatin histone acetylation,4
+Enzastaurin,"Other, kinases",4
+Lapatinib,RTK signaling,4
+MG-132,Protein stability and degradation,4
+Nutlin-3a (-),p53 pathway,4
+PLX-4720,ERK MAPK signaling,4
+Palbociclib,Cell cycle,4
+VX-11e,ERK MAPK signaling,4
+Vorinostat,Chromatin histone acetylation,4
+(5Z)-7-Oxozeaenol,"Other, kinases",3
+AS601245,JNK and p38 signaling,3
+Alectinib,RTK signaling,3
+BIX02189,ERK MAPK signaling,3
+BMS-536924,IGF1R signaling,3
+BX796,Unknown,3
+Cisplatin,DNA replication,3
+Ispinesib Mesylate,Mitosis,3
+JNK-9L,JNK and p38 signaling,3
+Lestauritinib,Unknown,3
+Nilotinib,ABL signaling,3
+PI-103,"Other, kinases",3
+PLX-4720_repl_1371,ERK MAPK signaling,3
+Pictilisib_repl_1527,PI3K/MTOR signaling,3
+SB216763,WNT signaling,3
+SB590885,ERK MAPK signaling,3
+TL-1-85,"Other, kinases",3
+XMD11-85h,"Other, kinases",3
+XMD15-27,"Other, kinases",3
+5-Fluorouracil,Other,2
+BAY-61-3606,"Other, kinases",2
+CCT007093,Cell cycle,2
+CP466722,Genome integrity,2
+Camptothecin,DNA replication,2
+Cetuximab,EGFR signaling,2
+DMOG,Metabolism,2
+Docetaxel,Mitosis,2
+Embelin,Apoptosis regulation,2
+Genentech Cpd 10,Mitosis,2
+HG-5-88-01,"Other, kinases",2
+Idelalisib,PI3K/MTOR signaling,2
+Linsitinib,IGF1R signaling,2
+MPS-1-IN-1,Mitosis,2
+Masitinib,RTK signaling,2
+Midostaurin,Other,2
+NPK76-II-72-1,Cell cycle,2
+OSI-930,RTK signaling,2
+PHA-793887,Cell cycle,2
+Pelitinib,EGFR signaling,2
+Pevonedistat,Other,2
+SB-505124,Unknown,2
+Salubrinal,Other,2
+TAK-715,JNK and p38 signaling,2
+TPCA-1,"Other, kinases",2
+VNLG/124,Chromatin histone acetylation,2
+Vinblastine,Mitosis,2
+YK-4-279,Other,2
+AICA Ribonucleotide,Metabolism,1
+AS605240,PI3K/MTOR signaling,1
+AT-7519,Cell cycle,1
+AZD6482,PI3K/MTOR signaling,1
+Afatinib,EGFR signaling,1
+Belinostat,Chromatin histone acetylation,1
+Bicalutamide,Hormone-related,1
+Bleomycin,DNA replication,1
+CCT-018159,Protein stability and degradation,1
+CHIR-99021,WNT signaling,1
+CUDC-101,Other,1
+Cabozantinib,RTK signaling,1
+EHT-1864,Cytoskeleton,1
+Epothilone B,Mitosis,1
+Etoposide,DNA replication,1
+FH535,Other,1
+FTI-277,Other,1
+Fedratinib,"Other, kinases",1
+GSK269962A,Cytoskeleton,1
+GSK650394,"Other, kinases",1
+GW441756,RTK signaling,1
+Gefitinib,EGFR signaling,1
+HG6-64-1,ERK MAPK signaling,1
+JNK Inhibitor VIII,JNK and p38 signaling,1
+JW-7-24-1,"Other, kinases",1
+JW-7-52-1,PI3K/MTOR signaling,1
+KIN001-244,"Other, kinases",1
+Motesanib,RTK signaling,1
+OSU-03012,Metabolism,1
+Olaparib,Genome integrity,1
+Olaparib_repl_1017,Genome integrity,1
+PD0325901,ERK MAPK signaling,1
+PF-562271,Cytoskeleton,1
+QL-XII-47,"Other, kinases",1
+RO-3306,Cell cycle,1
+Rapamycin,PI3K/MTOR signaling,1
+Refametinib_repl_1014,ERK MAPK signaling,1
+SB52334,RTK signaling,1
+STF-62247,Other,1
+Seliciclib,Cell cycle,1
+Serdemetan,p53 pathway,1
+Sunitinib,RTK signaling,1
+Talazoparib,Genome integrity,1
+Tanespimycin,Protein stability and degradation,1
+Thapsigargin,Other,1
+Tozasertib,Mitosis,1
+Trametinib,ERK MAPK signaling,1
+Tretinoin,Other,1
+UNC0638,Chromatin histone methylation,1
+VX-702,JNK and p38 signaling,1
+WHI-P97,"Other, kinases",1
+XMD13-2,Cytoskeleton,1
+XMD14-99,"Other, kinases",1
+Y-39983,Cytoskeleton,1
+ZG-10,JNK and p38 signaling,1

@@ -1,0 +1,58 @@
+alias,hgnc_symbol,notes
+P38,MAPK14,p38 alpha MAPK
+P38ALPHA,MAPK14,p38 alpha MAPK
+P38BETA,MAPK11,p38 beta MAPK
+DNAPK,PRKDC,DNA-dependent protein kinase
+RSK,RPS6KA1,Ribosomal S6 kinase - primary RSK1
+RSK2,RPS6KA3,Ribosomal S6 kinase 2
+MEK1,MAP2K1,MAPK/ERK kinase 1
+MEK2,MAP2K2,MAPK/ERK kinase 2
+MEK5,MAP2K5,MAPK/ERK kinase 5
+JNK,MAPK8,c-Jun N-terminal kinase - primary JNK1
+JNK1,MAPK8,c-Jun N-terminal kinase 1
+JNK2,MAPK9,c-Jun N-terminal kinase 2
+JNK3,MAPK10,c-Jun N-terminal kinase 3
+ERK1,MAPK3,Extracellular signal-regulated kinase 1
+ERK2,MAPK1,Extracellular signal-regulated kinase 2
+ERK5,MAPK7,Extracellular signal-regulated kinase 5
+BCL-XL,BCL2L1,BCL2 like 1
+BCL-W,BCL2L2,BCL2 like 2
+PI3K (CLASS 1),PIK3CA,PI3K catalytic alpha - representative
+PI3KALPHA,PIK3CA,PI3K catalytic alpha
+PI3KBETA,PIK3CB,PI3K catalytic beta
+PI3KGAMMA,PIK3CG,PI3K catalytic gamma
+PI3KDELTA,PIK3CD,PI3K catalytic delta
+TAK1,MAP3K7,TGF-beta activated kinase 1
+S6K1,RPS6KB1,Ribosomal protein S6 kinase B1
+PDK1,PDPK1,Phosphoinositide-dependent kinase 1
+PDK1 (PDPK1),PDPK1,Phosphoinositide-dependent kinase 1
+ROCK,ROCK1,Rho-associated kinase - primary ROCK1
+FAK,PTK2,Focal adhesion kinase
+FAK2,PTK2B,Focal adhesion kinase 2
+IKK,IKBKB,IKK beta - primary
+IKK1,CHUK,IKK alpha
+IKK2,IKBKB,IKK beta
+IR,INSR,Insulin receptor
+KSP,KIF11,Kinesin spindle protein
+MPS1,TTK,Monopolar spindle 1 kinase
+ALK5,TGFBR1,TGF-beta receptor type I
+VEGFR1,FLT1,Vascular endothelial growth factor receptor 1
+VEGFR2,KDR,Vascular endothelial growth factor receptor 2
+VEGFR3,FLT4,Vascular endothelial growth factor receptor 3
+PKCB,PRKCB,Protein kinase C beta
+PKC,PRKCA,Protein kinase C - primary alpha
+HIF-PH,EGLN1,Hypoxia-inducible factor prolyl hydroxylase
+LXR,NR1H3,Liver X receptor alpha
+FXR,NR1H4,Farnesoid X receptor
+BCR-ABL,ABL1,BCR-ABL fusion - ABL1 component
+MRCKB,CDC42BPB,MRCKbeta
+M4K2,MAP4K2,MAP4 kinase 2
+MAP4K2,MAP4K2,MAP4 kinase 2
+TIE2,TEK,TEK receptor tyrosine kinase
+GAMMA-SECRETASE,PSEN1,Gamma-secretase component presenilin 1
+SHP-1 (PTPN6),PTPN6,SHP-1 phosphatase
+SHP-2 (PTPN11),PTPN11,SHP-2 phosphatase
+CAMK2,CAMK2A,CaM kinase II alpha
+C-FGR,FGR,Gardner-Rasheed feline sarcoma viral oncogene
+PPK,NEK2,NIMA-related kinase 2 (possible match)
+EPHRINS,EPHA2,Ephrin receptor - representative

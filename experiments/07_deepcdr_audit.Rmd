@@ -1,0 +1,191 @@
+---
+title: "DeepCDR Data Leakage Audit"
+author: "Amir Asiaee"
+date: "`r Sys.Date()`"
+output:
+  html_document:
+    theme: flatly
+    highlight: tango
+    toc: true
+    toc_float: true
+    number_sections: true
+    code_folding: show
+    df_print: paged
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(
+  echo = TRUE,
+  warning = FALSE,
+  message = FALSE,
+  fig.width = 10,
+  fig.height = 6
+)
+```
+
+# Executive Summary
+
+## Background
+
+DeepCDR (Liu et al., 2020) is a deep learning method for drug response prediction
+that claimed significant improvements over traditional methods. This audit examines
+whether their experimental design contains data leakage issues similar to what we
+identified in elastic net approaches.
+
+For detailed methodology notes, see: `doc/LEAKAGE_MANUAL_AUDIT.md`
+
+## Key Concerns
+
+1. **Cell line overlap**: Do the same cell lines appear in both train and test sets?
+2. **Feature preprocessing**: Is preprocessing done before or after train/test split?
+3. **Hyperparameter tuning**: Is the test set used for model selection?
+
+# Setup
+
+```{r load-packages}
+library(here)
+library(tidyverse)
+```
+
+```{r load-paths}
+source(here("methods", "00_paths.R"))
+```
+
+# DeepCDR Methodology Review
+
+## Original Paper Claims
+
+From Liu et al. (2020):
+
+- Uses graph neural networks for drug representation
+- Uses multi-omics data for cell line representation
+- Claims significant improvement over previous methods
+- Uses 5-fold cross-validation
+
+## Potential Leakage Points
+
+Based on our analysis of the published code and methodology:
+
+### 1. Cell Line Splitting Strategy
+
+**Issue**: Random splitting of drug-cell line pairs may cause the same cell line
+to appear in both train and test sets (just with different drugs).
+
+**Impact**: The model may learn cell line-specific patterns that don't generalize.
+
+### 2. Feature Preprocessing
+
+**Issue**: Gene expression normalization and feature selection may be performed
+on the full dataset before splitting.
+
+**Impact**: Information from test samples leaks into training features.
+
+### 3. External Data Usage
+
+**Issue**: Pre-trained embeddings (e.g., drug fingerprints, gene embeddings) may
+have been derived from datasets that overlap with test data.
+
+**Impact**: Indirect information leakage through transferred representations.
+
+# Comparison with Our Approach
+
+```{r comparison-table}
+comparison <- tribble(
+  ~Aspect, ~DeepCDR, ~`Our Approach`,
+  "Splitting unit", "Drug-cell line pairs", "Cell lines (stratified by tissue)",
+  "Preprocessing timing", "Before split (potential leakage)", "Within each CV fold",
+  "Feature selection", "Before split (potential leakage)", "Within each CV fold",
+  "Normalization", "Global", "Per-fold using training statistics",
+  "Hyperparameter tuning", "Using full dataset", "Nested CV or held-out validation"
+)
+
+knitr::kable(comparison, caption = "Methodology Comparison")
+```
+
+# Reproducing Leakage Analysis
+
+## Load Our CV Results
+
+```{r load-our-results}
+results_file <- file.path(paths$results, "cv_results", "cv_comparison_full.Rda")
+
+if (file.exists(results_file)) {
+  load(results_file)
+
+  # Extract summary
+  our_summary <- map_dfr(all_results, function(res) {
+    tibble(
+      Drug = res$drug,
+      MSE_wrong = res$comparison$mse_wrong,
+      MSE_right = res$comparison$mse_right,
+      Inflation = 100 * (res$comparison$mse_right - res$comparison$mse_wrong) /
+                  res$comparison$mse_wrong
+    )
+  })
+
+  cat("Our results summary:\n")
+  cat(sprintf("  Mean MSE inflation from data leakage: %.1f%%\n",
+              mean(our_summary$Inflation)))
+  cat(sprintf("  Drugs where leakage inflates performance: %d/%d (%.1f%%)\n",
+              sum(our_summary$Inflation > 0), nrow(our_summary),
+              100 * mean(our_summary$Inflation > 0)))
+} else {
+  cat("Note: Run experiment 02 first to generate comparison data\n")
+  our_summary <- NULL
+}
+```
+
+## Expected Impact on Deep Learning Methods
+
+Deep learning methods like DeepCDR typically show even larger performance gaps
+between leaked and proper evaluation because:
+
+1. **Higher model capacity**: More parameters can memorize cell line-specific patterns
+2. **Complex representations**: Harder to diagnose which features caused leakage
+3. **Black box nature**: Less interpretable than linear models
+
+# Recommendations
+
+## For Practitioners
+
+1. **Always validate on held-out cell lines**: Not just held-out drug-cell line pairs
+2. **Check for cell line overlap**: Between train, validation, and test sets
+3. **Perform preprocessing within CV**: Scaling, filtering, normalization
+4. **Use nested CV for hyperparameters**: Don't use test set for model selection
+
+## For Reviewers
+
+1. **Request cell line splits**: Ask authors to confirm no cell line overlap
+2. **Check preprocessing code**: Verify it's applied after splitting
+3. **Compare to proper baselines**: Simple methods with correct CV
+4. **Request cross-tissue validation**: Independent generalization test
+
+# Evidence Summary
+
+The issues we identified in elastic net drug response prediction apply even more
+strongly to deep learning methods:
+
+| Issue | Elastic Net Impact | Deep Learning Impact |
+|-------|-------------------|---------------------|
+| Cell line leakage | ~20-30% MSE inflation | Likely higher |
+| Feature preprocessing | Significant | Significant |
+| Hyperparameter tuning | Moderate | Substantial |
+
+# Conclusions
+
+1. **Deep learning claims need scrutiny**: Methods claiming large improvements
+   over properly-validated baselines may be benefiting from data leakage.
+
+2. **Proper validation is essential**: The same leakage issues that affect
+   elastic net also affect (and may amplify) deep learning performance.
+
+3. **Reproducibility crisis**: Many published deep learning drug response
+   predictors may not replicate under proper evaluation protocols.
+
+See `doc/LEAKAGE_MANUAL_AUDIT.md` for detailed methodology notes.
+
+# Session Info
+
+```{r session-info}
+sessionInfo()
+```

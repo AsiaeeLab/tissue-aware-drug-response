@@ -1,0 +1,64 @@
+"analysis","selection","method","group_name","n","n_sig_raw","frac_sig_raw","n_sig_bh","frac_sig_bh","median_odds_ratio_ha","median_n_selected","p_value"
+"significance_fraction","freq50","DSEN","all_drugs",265,98,0.369811320754717,74,0.279245283018868,23.5805435407656,5,NA
+"significance_fraction","freq50","EN","all_drugs",265,156,0.588679245283019,145,0.547169811320755,15.9151346332405,14,NA
+"paired_wilcoxon","freq50","DSEN_vs_EN","all_drugs",265,NA,NA,NA,NA,7.66540890752507,NA,0.139867753137698
+"significance_fraction","freq25","DSEN","all_drugs",265,147,0.554716981132075,141,0.532075471698113,10.659265521271,26,NA
+"significance_fraction","freq25","EN","all_drugs",265,196,0.739622641509434,192,0.724528301886792,8.50749379652605,73,NA
+"paired_wilcoxon","freq25","DSEN_vs_EN","all_drugs",265,NA,NA,NA,NA,2.15177172474499,NA,0.00276764702835114
+"significance_fraction","freq75","DSEN","all_drugs",265,57,0.215094339622642,24,0.0905660377358491,78.6223648029331,1,NA
+"significance_fraction","freq75","EN","all_drugs",265,111,0.418867924528302,87,0.328301886792453,33.7548209366391,3,NA
+"paired_wilcoxon","freq75","DSEN_vs_EN","all_drugs",265,NA,NA,NA,NA,44.867543866294,NA,9.85512726638693e-05
+"significance_fraction","top50","DSEN","all_drugs",265,197,0.743396226415094,197,0.743396226415094,7.65659905281029,50,NA
+"significance_fraction","top50","EN","all_drugs",265,175,0.660377358490566,175,0.660377358490566,5.81887945670628,50,NA
+"paired_wilcoxon","top50","DSEN_vs_EN","all_drugs",265,NA,NA,NA,NA,1.83771959610401,NA,0.147654105150807
+"pathway_enrichment","freq50","DSEN","ABL signaling",2,1,0.5,1,0.5,46.7864221573515,10.5,NA
+"pathway_enrichment","freq50","DSEN","Apoptosis regulation",7,2,0.285714285714286,1,0.142857142857143,12.7232394575185,5,NA
+"pathway_enrichment","freq50","DSEN","Cell cycle",15,5,0.333333333333333,4,0.266666666666667,11.230980751604,10,NA
+"pathway_enrichment","freq50","DSEN","Chromatin histone acetylation",12,6,0.5,4,0.333333333333333,28.412864119762,2,NA
+"pathway_enrichment","freq50","DSEN","Chromatin histone methylation",3,1,0.333333333333333,0,0,47.2578512396694,1,NA
+"pathway_enrichment","freq50","DSEN","Chromatin other",5,1,0.2,1,0.2,34.9040888066605,2,NA
+"pathway_enrichment","freq50","DSEN","Cytoskeleton",9,3,0.333333333333333,3,0.333333333333333,13.8974234321828,18,NA
+"pathway_enrichment","freq50","DSEN","DNA replication",13,4,0.307692307692308,2,0.153846153846154,13.6010214763823,10,NA
+"pathway_enrichment","freq50","DSEN","EGFR signaling",7,4,0.571428571428571,4,0.571428571428571,26.2068438741216,6,NA
+"pathway_enrichment","freq50","DSEN","ERK MAPK signaling",17,9,0.529411764705882,9,0.529411764705882,26.2531374349556,8,NA
+"pathway_enrichment","freq50","DSEN","Genome integrity",8,3,0.375,1,0.125,36.7323475568955,3,NA
+"pathway_enrichment","freq50","DSEN","Hormone-related",3,1,0.333333333333333,1,0.333333333333333,18.778313253012,23,NA
+"pathway_enrichment","freq50","DSEN","IGF1R signaling",3,2,0.666666666666667,2,0.666666666666667,78.6223648029331,5,NA
+"pathway_enrichment","freq50","DSEN","JNK and p38 signaling",7,4,0.571428571428571,3,0.428571428571429,21.4793388429752,7,NA
+"pathway_enrichment","freq50","DSEN","Metabolism",5,3,0.6,3,0.6,9.44936639118457,33,NA
+"pathway_enrichment","freq50","DSEN","Mitosis",13,6,0.461538461538462,3,0.230769230769231,15.7237396883593,7,NA
+"pathway_enrichment","freq50","DSEN","Other",35,10,0.285714285714286,4,0.114285714285714,26.2068438741216,4,NA
+"pathway_enrichment","freq50","DSEN","Other, kinases",35,12,0.342857142857143,10,0.285714285714286,32.3178469866722,3,NA
+"pathway_enrichment","freq50","DSEN","p53 pathway",3,1,0.333333333333333,1,0.333333333333333,26.2068438741216,8,NA
+"pathway_enrichment","freq50","DSEN","PI3K/MTOR signaling",23,6,0.260869565217391,5,0.217391304347826,19.3866378867304,4,NA
+"pathway_enrichment","freq50","DSEN","Protein stability and degradation",8,1,0.125,1,0.125,8.64363899485973,20,NA
+"pathway_enrichment","freq50","DSEN","RTK signaling",24,8,0.333333333333333,7,0.291666666666667,41.5613083245265,3.5,NA
+"pathway_enrichment","freq50","DSEN","Unknown",3,3,1,2,0.666666666666667,11.2875576036866,27,NA
+"pathway_enrichment","freq50","DSEN","WNT signaling",5,2,0.4,2,0.4,18.1190023250898,8,NA
+"pathway_enrichment","freq50","EN","ABL signaling",2,2,1,2,1,10.4866612758256,28,NA
+"pathway_enrichment","freq50","EN","Apoptosis regulation",7,4,0.571428571428571,4,0.571428571428571,14.1834574028122,22,NA
+"pathway_enrichment","freq50","EN","Cell cycle",15,13,0.866666666666667,12,0.8,11.3065558633426,38,NA
+"pathway_enrichment","freq50","EN","Chromatin histone acetylation",12,7,0.583333333333333,7,0.583333333333333,16.9820653554693,55.5,NA
+"pathway_enrichment","freq50","EN","Chromatin histone methylation",3,2,0.666666666666667,2,0.666666666666667,34.0408717614728,41,NA
+"pathway_enrichment","freq50","EN","Chromatin other",5,2,0.4,1,0.2,26.2531374349556,8,NA
+"pathway_enrichment","freq50","EN","Cytoskeleton",9,6,0.666666666666667,5,0.555555555555556,13.8805704099822,22,NA
+"pathway_enrichment","freq50","EN","DNA replication",13,7,0.538461538461538,7,0.538461538461538,10.5061689867704,12,NA
+"pathway_enrichment","freq50","EN","EGFR signaling",7,4,0.571428571428571,4,0.571428571428571,13.8974234321828,7,NA
+"pathway_enrichment","freq50","EN","ERK MAPK signaling",17,16,0.941176470588235,16,0.941176470588235,79.4856348470806,8,NA
+"pathway_enrichment","freq50","EN","Genome integrity",8,3,0.375,3,0.375,78.6223648029331,0,NA
+"pathway_enrichment","freq50","EN","Hormone-related",3,0,0,0,0,78.6223648029331,0,NA
+"pathway_enrichment","freq50","EN","IGF1R signaling",3,2,0.666666666666667,2,0.666666666666667,15.1584251782873,11,NA
+"pathway_enrichment","freq50","EN","JNK and p38 signaling",7,4,0.571428571428571,4,0.571428571428571,15.8874884151993,14,NA
+"pathway_enrichment","freq50","EN","Metabolism",5,4,0.8,4,0.8,13.0185438516492,59,NA
+"pathway_enrichment","freq50","EN","Mitosis",13,8,0.615384615384615,7,0.538461538461538,11.0691695974857,24,NA
+"pathway_enrichment","freq50","EN","Other",35,17,0.485714285714286,16,0.457142857142857,20.6818654833956,7,NA
+"pathway_enrichment","freq50","EN","Other, kinases",35,20,0.571428571428571,17,0.485714285714286,17.9469910371319,22,NA
+"pathway_enrichment","freq50","EN","p53 pathway",3,3,1,2,0.666666666666667,14.9504795117698,21,NA
+"pathway_enrichment","freq50","EN","PI3K/MTOR signaling",23,15,0.652173913043478,15,0.652173913043478,17.8032245275539,29,NA
+"pathway_enrichment","freq50","EN","Protein stability and degradation",8,4,0.5,4,0.5,12.6880270980334,6,NA
+"pathway_enrichment","freq50","EN","RTK signaling",24,7,0.291666666666667,5,0.208333333333333,13.0944464831165,6,NA
+"pathway_enrichment","freq50","EN","Unknown",3,2,0.666666666666667,2,0.666666666666667,10.6310414685575,37,NA
+"pathway_enrichment","freq50","EN","WNT signaling",5,4,0.8,4,0.8,16.8125465887245,42,NA
+"og_tsg_breakdown","freq50","DSEN","all_signs",367,233,0.634877384196185,167,0.455040871934605,228,172,NA
+"og_tsg_breakdown","freq50","EN","all_signs",936,599,0.639957264957265,480,0.512820512820513,618,461,NA
+"phase2_decision","freq50","DSEN_vs_EN","decision",265,0,0,NA,NA,7.66540890752507,NA,0.139867753137698

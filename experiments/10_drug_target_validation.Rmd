@@ -1,0 +1,801 @@
+---
+title: "Drug Target Validation: Do Models Find Known Targets?"
+author: "Amir Asiaee"
+date: "`r Sys.Date()`"
+output:
+  html_document:
+    theme: flatly
+    highlight: tango
+    toc: true
+    toc_float: true
+    number_sections: true
+    code_folding: show
+    df_print: paged
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(
+  echo = TRUE,
+  warning = FALSE,
+  message = FALSE,
+  fig.width = 10,
+  fig.height = 6,
+  dpi = 150
+)
+```
+
+# Executive Summary
+
+## Objective
+
+This analysis validates our drug response prediction models (EN and DSEN) by checking
+whether they identify **known drug targets** as predictive features. If a model correctly
+learns the biology, we expect drugs with known targets (e.g., EGFR for Erlotinib) to
+show those targets among selected features.
+
+## Key Questions
+
+1. **Target Recovery Rate**: What proportion of drugs have their known target(s)
+   among selected features?
+2. **EN vs DSEN**: Does DSEN's tissue-aware approach improve or harm target recovery?
+3. **Feature Type**: Do targets appear in expression, mutation, or copy number features?
+4. **Biological Validation**: Does target recovery correlate with prediction performance?
+
+# Setup
+
+```{r load-packages}
+library(here)
+library(tidyverse)
+library(knitr)
+library(patchwork)
+library(scales)
+```
+
+```{r load-paths}
+source(here("methods", "00_paths.R"))
+```
+
+```{r output-dirs}
+fig_dir <- file.path(paths$results, "figures")
+table_dir <- file.path(paths$results, "tables")
+```
+
+# Load Data
+
+## Drug Targets
+
+```{r load-targets}
+targets_file <- here("data", "drug_targets_curated.csv")
+
+if (file.exists(targets_file)) {
+  drug_targets <- read_csv(targets_file, show_col_types = FALSE)
+  cat("Loaded drug targets:", nrow(drug_targets), "entries\n")
+  cat("Unique drugs:", n_distinct(drug_targets$drug_name), "\n")
+  cat("Unique target genes:", n_distinct(drug_targets$target_gene, na.rm = TRUE), "\n")
+} else {
+  stop("Drug targets file not found. Run: Rscript methods/process_drug_targets.R")
+}
+
+# Filter to drugs with known targets
+targets_known <- drug_targets %>%
+  filter(!is.na(target_gene)) %>%
+  filter(source != "not_found")
+
+cat("Drugs with at least one known target:",
+    n_distinct(targets_known$drug_name), "\n")
+```
+
+## Gene Name Standardization
+
+Many drug targets use common aliases (e.g., "P38" instead of MAPK14, "MEK1" instead
+of MAP2K1). We map these to official HGNC gene symbols to enable proper matching
+with our genomic features.
+
+```{r load-gene-mapping}
+mapping_file <- here("data", "gene_name_mapping.csv")
+
+if (file.exists(mapping_file)) {
+  gene_mapping <- read_csv(mapping_file, show_col_types = FALSE)
+  cat("Loaded gene name mapping:", nrow(gene_mapping), "aliases\n")
+} else {
+  # Create empty mapping if file doesn't exist
+  gene_mapping <- tibble(alias = character(), hgnc_symbol = character())
+  cat("No gene mapping file found - using original names\n")
+}
+
+# Function to standardize gene names
+standardize_gene <- function(gene, mapping_df) {
+  # Check if gene is in mapping
+  match_idx <- match(toupper(gene), toupper(mapping_df$alias))
+  if (!is.na(match_idx)) {
+    return(mapping_df$hgnc_symbol[match_idx])
+  }
+  return(gene)  # Return original if no mapping found
+}
+
+# Apply standardization to targets
+targets_known <- targets_known %>%
+  mutate(
+    original_target = target_gene,
+    target_gene = sapply(target_gene, standardize_gene, mapping_df = gene_mapping)
+  )
+
+# Show mapping examples
+mapped_genes <- targets_known %>%
+  filter(original_target != target_gene) %>%
+  distinct(original_target, target_gene) %>%
+  head(15)
+
+cat("\n=== Gene Name Standardization Examples ===\n")
+if (nrow(mapped_genes) > 0) {
+  kable(mapped_genes, col.names = c("Original (alias)", "Standardized (HGNC)"))
+}
+```
+
+## Feature Names from Data
+
+```{r load-feature-names}
+# Load the predictor matrix from CCLE data
+load(file.path(paths$clean, "ccle.Rda"))
+
+# Feature names from the predictor matrix x
+# Format: GENE_mut.hsrec, GENE_Expr (for expression), etc.
+feature_names <- colnames(x)
+
+# Parse feature names to get gene and type
+feature_info <- tibble(feature = feature_names) %>%
+  mutate(
+    # Determine feature type based on suffix patterns
+    type = case_when(
+      grepl("_mut\\.hsrec$|_mut$", feature) ~ "Mutation",
+      grepl("_Expr$", feature) ~ "Expression",
+      grepl("_CN$", feature) ~ "CopyNumber",
+      grepl("_del$", feature) ~ "Deletion",
+      grepl("_amp$", feature) ~ "Amplification",
+      TRUE ~ "Unknown"
+    ),
+    # Extract gene name by removing suffix
+    gene = sub("_mut\\.hsrec$|_mut$|_Expr$|_CN$|_del$|_amp$", "", feature)
+  )
+
+cat("Total features:", length(feature_names), "\n")
+cat("Feature types:\n")
+print(table(feature_info$type))
+
+# Get unique genes in our feature set
+genes_in_data <- unique(feature_info$gene)
+cat("\nUnique genes in feature set:", length(genes_in_data), "\n")
+
+# Clean up large objects
+rm(x, y, cls)
+```
+
+## Check Target Coverage
+
+```{r target-coverage}
+# Check how many drug targets are actually present in our feature set
+targets_in_features <- targets_known %>%
+  mutate(
+    target_in_features = target_gene %in% genes_in_data
+  )
+
+cat("=== Target Coverage in Feature Set ===\n")
+coverage <- targets_in_features %>%
+  group_by(drug_name) %>%
+  summarize(
+    n_targets = n(),
+    n_covered = sum(target_in_features),
+    any_covered = any(target_in_features)
+  )
+
+cat("Drugs with target in feature set:",
+    sum(coverage$any_covered), "/",
+    nrow(coverage), "\n")
+cat("Percentage:", round(100 * mean(coverage$any_covered), 1), "%\n")
+
+# Targets not in feature set
+missing_targets <- targets_in_features %>%
+  filter(!target_in_features) %>%
+  distinct(target_gene)
+
+cat("\nTargets NOT in our feature set (first 20):\n")
+print(head(missing_targets, 20))
+```
+
+## Bootstrap Feature Selection Results
+
+```{r load-bootstrap}
+bootstrap_file <- here("results", "dsen_results", "dsen_bootstrap_results.Rda")
+
+if (file.exists(bootstrap_file)) {
+  load(bootstrap_file)
+  bootstrap_results <- all_results
+  rm(all_results)
+  cat("Loaded bootstrap results for", length(bootstrap_results), "drugs\n")
+} else {
+  stop("Bootstrap results not found. Run: Rscript methods/run_dsen_bootstrap.R")
+}
+```
+
+# Target Recovery Analysis
+
+## Methodology
+
+For each drug, we check if its known target gene(s) appear among the features
+selected by EN and DSEN. A feature is considered "selected" if it was chosen
+in at least 50% of bootstrap resamples (100 iterations).
+
+```{r define-recovery-function}
+# Selection frequency threshold
+FREQ_THRESHOLD <- 0.5
+
+# Function to check if target genes are in selected features
+check_target_recovery <- function(drug_name, bootstrap_result, targets_df,
+                                   feature_info_df, freq_threshold = 0.5) {
+
+  # Get targets for this drug
+  drug_targets <- targets_df %>%
+    filter(drug_name == !!drug_name, target_in_features == TRUE) %>%
+    pull(target_gene) %>%
+    unique()
+
+  if (length(drug_targets) == 0) {
+    return(tibble(
+      drug = drug_name,
+      n_targets = 0,
+      en_recovered = NA,
+      dsen_recovered = NA,
+      en_targets_found = NA_character_,
+      dsen_targets_found = NA_character_
+    ))
+  }
+
+  # EN: Get features selected >= threshold
+  en_freq <- bootstrap_result$en_bootstrap$cnt / bootstrap_result$en_bootstrap$nboot
+  en_selected_features <- names(en_freq)[en_freq >= freq_threshold]
+
+  # Get genes from selected EN features
+  en_genes <- feature_info_df %>%
+    filter(feature %in% en_selected_features) %>%
+    pull(gene) %>%
+    unique()
+
+  # DSEN: Get features selected >= threshold
+  dsen_freq <- bootstrap_result$dsen_bootstrap$cnt / bootstrap_result$dsen_bootstrap$nboot
+  dsen_selected_features <- names(dsen_freq)[dsen_freq >= freq_threshold]
+
+  # Get genes from selected DSEN features
+  dsen_genes <- feature_info_df %>%
+    filter(feature %in% dsen_selected_features) %>%
+    pull(gene) %>%
+    unique()
+
+  # Check recovery
+  en_targets_found <- intersect(drug_targets, en_genes)
+  dsen_targets_found <- intersect(drug_targets, dsen_genes)
+
+  tibble(
+    drug = drug_name,
+    n_targets = length(drug_targets),
+    en_n_selected = length(en_selected_features),
+    dsen_n_selected = length(dsen_selected_features),
+    en_n_genes = length(en_genes),
+    dsen_n_genes = length(dsen_genes),
+    en_recovered = length(en_targets_found) / length(drug_targets),
+    dsen_recovered = length(dsen_targets_found) / length(drug_targets),
+    en_n_found = length(en_targets_found),
+    dsen_n_found = length(dsen_targets_found),
+    en_targets_found = paste(en_targets_found, collapse = ";"),
+    dsen_targets_found = paste(dsen_targets_found, collapse = ";")
+  )
+}
+```
+
+```{r compute-recovery}
+# Compute recovery for all drugs
+recovery_results <- map_dfr(bootstrap_results, function(r) {
+  check_target_recovery(
+    drug_name = r$drug,
+    bootstrap_result = r,
+    targets_df = targets_in_features,
+    feature_info_df = feature_info,
+    freq_threshold = FREQ_THRESHOLD
+  )
+})
+
+# Filter to drugs with at least one target in features
+recovery_valid <- recovery_results %>%
+  filter(n_targets > 0)
+
+cat("=== Target Recovery Summary ===\n")
+cat("Drugs with targets in feature set:", nrow(recovery_valid), "\n")
+```
+
+# Results: Target Recovery Rates
+
+## Overall Recovery
+
+```{r overall-recovery}
+# Overall recovery rates
+en_any_recovery <- mean(recovery_valid$en_recovered > 0, na.rm = TRUE)
+dsen_any_recovery <- mean(recovery_valid$dsen_recovered > 0, na.rm = TRUE)
+
+en_full_recovery <- mean(recovery_valid$en_recovered == 1, na.rm = TRUE)
+dsen_full_recovery <- mean(recovery_valid$dsen_recovered == 1, na.rm = TRUE)
+
+cat("=== Any Target Recovery (at least one target found) ===\n")
+cat(sprintf("EN:   %.1f%% of drugs\n", 100 * en_any_recovery))
+cat(sprintf("DSEN: %.1f%% of drugs\n", 100 * dsen_any_recovery))
+
+cat("\n=== Full Target Recovery (all targets found) ===\n")
+cat(sprintf("EN:   %.1f%% of drugs\n", 100 * en_full_recovery))
+cat(sprintf("DSEN: %.1f%% of drugs\n", 100 * dsen_full_recovery))
+
+cat("\n=== Mean Recovery Rate ===\n")
+cat(sprintf("EN:   %.1f%%\n", 100 * mean(recovery_valid$en_recovered, na.rm = TRUE)))
+cat(sprintf("DSEN: %.1f%%\n", 100 * mean(recovery_valid$dsen_recovered, na.rm = TRUE)))
+```
+
+## Interpretation
+
+```{r recovery-interpretation}
+# Compare EN vs DSEN
+recovery_comparison <- recovery_valid %>%
+  mutate(
+    en_better = en_recovered > dsen_recovered,
+    dsen_better = dsen_recovered > en_recovered,
+    tie = en_recovered == dsen_recovered
+  )
+
+cat("\n=== EN vs DSEN Comparison ===\n")
+cat(sprintf("EN better:   %d drugs (%.1f%%)\n",
+            sum(recovery_comparison$en_better),
+            100 * mean(recovery_comparison$en_better)))
+cat(sprintf("DSEN better: %d drugs (%.1f%%)\n",
+            sum(recovery_comparison$dsen_better),
+            100 * mean(recovery_comparison$dsen_better)))
+cat(sprintf("Tie:         %d drugs (%.1f%%)\n",
+            sum(recovery_comparison$tie),
+            100 * mean(recovery_comparison$tie)))
+```
+
+## Visualization: Recovery Rate Distribution
+
+```{r recovery-distribution, fig.height=5}
+recovery_long <- recovery_valid %>%
+  select(drug, en_recovered, dsen_recovered) %>%
+  pivot_longer(cols = c(en_recovered, dsen_recovered),
+               names_to = "method", values_to = "recovery_rate") %>%
+  mutate(method = ifelse(method == "en_recovered", "Standard EN", "DSEN"))
+
+p_recovery <- ggplot(recovery_long, aes(x = method, y = recovery_rate, fill = method)) +
+  geom_boxplot(alpha = 0.7, outlier.alpha = 0.3) +
+  scale_fill_manual(values = c("Standard EN" = "#4DAF4A", "DSEN" = "#FF7F00")) +
+  scale_y_continuous(labels = percent_format(), limits = c(0, 1)) +
+  labs(
+    title = "Drug Target Recovery Rate",
+    subtitle = sprintf("Proportion of known targets found in selected features (threshold: %.0f%%)",
+                       100 * FREQ_THRESHOLD),
+    x = NULL,
+    y = "Target Recovery Rate"
+  ) +
+  theme_minimal(base_size = 14) +
+  theme(
+    legend.position = "none",
+    panel.grid.minor = element_blank()
+  )
+
+print(p_recovery)
+
+ggsave(file.path(fig_dir, "target_recovery_boxplot.pdf"),
+       p_recovery, width = 6, height = 5)
+```
+
+## Top Performers: Best Target Recovery
+
+```{r top-recovery}
+# Drugs with best target recovery
+top_recovery_en <- recovery_valid %>%
+  filter(en_recovered == 1) %>%
+  arrange(desc(n_targets)) %>%
+  select(drug, n_targets, en_n_found, en_targets_found) %>%
+  head(15)
+
+cat("\n=== EN: Drugs with Full Target Recovery ===\n")
+kable(top_recovery_en,
+      col.names = c("Drug", "# Targets", "# Found", "Targets Found"),
+      caption = "Drugs where EN found all known targets")
+
+top_recovery_dsen <- recovery_valid %>%
+  filter(dsen_recovered == 1) %>%
+  arrange(desc(n_targets)) %>%
+  select(drug, n_targets, dsen_n_found, dsen_targets_found) %>%
+  head(15)
+
+cat("\n=== DSEN: Drugs with Full Target Recovery ===\n")
+kable(top_recovery_dsen,
+      col.names = c("Drug", "# Targets", "# Found", "Targets Found"),
+      caption = "Drugs where DSEN found all known targets")
+```
+
+## Failed Recoveries: Missed Targets
+
+```{r missed-targets}
+# Drugs where both methods missed all targets
+missed_all <- recovery_valid %>%
+  filter(en_recovered == 0 & dsen_recovered == 0) %>%
+  left_join(
+    targets_in_features %>%
+      filter(target_in_features == TRUE) %>%
+      group_by(drug_name) %>%
+      summarize(expected_targets = paste(target_gene, collapse = ";")),
+    by = c("drug" = "drug_name")
+  ) %>%
+  select(drug, n_targets, expected_targets, en_n_genes, dsen_n_genes)
+
+cat("\n=== Drugs Where Both Methods Missed All Targets ===\n")
+cat("Count:", nrow(missed_all), "\n")
+if (nrow(missed_all) > 0) {
+  kable(head(missed_all, 15),
+        col.names = c("Drug", "# Targets", "Expected Targets",
+                      "EN Genes Selected", "DSEN Genes Selected"),
+        caption = "First 15 drugs where target recovery failed")
+}
+```
+
+# Recovery by Target Pathway
+
+```{r pathway-recovery}
+# Join with pathway information
+recovery_with_pathway <- recovery_valid %>%
+  left_join(
+    drug_targets %>%
+      filter(!is.na(target_pathway)) %>%
+      distinct(drug_name, target_pathway),
+    by = c("drug" = "drug_name")
+  )
+
+pathway_summary <- recovery_with_pathway %>%
+  filter(!is.na(target_pathway)) %>%
+  group_by(target_pathway) %>%
+  summarize(
+    n_drugs = n(),
+    en_mean_recovery = mean(en_recovered, na.rm = TRUE),
+    dsen_mean_recovery = mean(dsen_recovered, na.rm = TRUE),
+    .groups = "drop"
+  ) %>%
+  filter(n_drugs >= 5) %>%
+  arrange(desc(en_mean_recovery))
+
+cat("\n=== Recovery by Target Pathway ===\n")
+kable(pathway_summary,
+      digits = 2,
+      col.names = c("Pathway", "# Drugs", "EN Recovery", "DSEN Recovery"),
+      caption = "Mean target recovery rate by pathway (pathways with >=5 drugs)")
+```
+
+```{r pathway-plot, fig.width=10, fig.height=6}
+pathway_long <- pathway_summary %>%
+  pivot_longer(cols = c(en_mean_recovery, dsen_mean_recovery),
+               names_to = "method", values_to = "recovery") %>%
+  mutate(
+    method = ifelse(method == "en_mean_recovery", "EN", "DSEN"),
+    target_pathway = fct_reorder(target_pathway, recovery, .fun = max)
+  )
+
+p_pathway <- ggplot(pathway_long,
+                     aes(x = target_pathway, y = recovery, fill = method)) +
+  geom_col(position = "dodge", alpha = 0.8) +
+  scale_fill_manual(values = c("EN" = "#4DAF4A", "DSEN" = "#FF7F00")) +
+  scale_y_continuous(labels = percent_format()) +
+  coord_flip() +
+  labs(
+    title = "Target Recovery by Drug Pathway",
+    subtitle = "Mean proportion of known targets found in selected features",
+    x = NULL,
+    y = "Mean Target Recovery Rate",
+    fill = "Method"
+  ) +
+  theme_minimal(base_size = 12) +
+  theme(
+    legend.position = "bottom",
+    panel.grid.minor = element_blank()
+  )
+
+print(p_pathway)
+
+ggsave(file.path(fig_dir, "target_recovery_by_pathway.pdf"),
+       p_pathway, width = 10, height = 6)
+```
+
+# Feature Type Analysis
+
+Do targets appear more often in expression, mutation, or copy number features?
+
+```{r feature-type-analysis}
+# For drugs with recovered targets, check which feature types contain them
+feature_type_recovery <- map_dfr(bootstrap_results, function(r) {
+  drug <- r$drug
+
+  # Get targets for this drug
+  drug_targets_genes <- targets_in_features %>%
+    filter(drug_name == drug, target_in_features == TRUE) %>%
+    pull(target_gene) %>%
+    unique()
+
+  if (length(drug_targets_genes) == 0) return(NULL)
+
+  # EN selected features
+  en_freq <- r$en_bootstrap$cnt / r$en_bootstrap$nboot
+  en_selected <- names(en_freq)[en_freq >= FREQ_THRESHOLD]
+
+  # DSEN selected features
+  dsen_freq <- r$dsen_bootstrap$cnt / r$dsen_bootstrap$nboot
+  dsen_selected <- names(dsen_freq)[dsen_freq >= FREQ_THRESHOLD]
+
+  # Check each target
+  map_dfr(drug_targets_genes, function(target) {
+    # Features for this target gene
+    target_features <- feature_info %>%
+      filter(gene == target)
+
+    tibble(
+      drug = drug,
+      target = target,
+      expr_in_en = any(target_features$feature[target_features$type == "Expression"] %in% en_selected),
+      mut_in_en = any(target_features$feature[target_features$type == "Mutation"] %in% en_selected),
+      cn_in_en = any(target_features$feature[target_features$type %in% c("CopyNumber", "Deletion", "Amplification")] %in% en_selected),
+      expr_in_dsen = any(target_features$feature[target_features$type == "Expression"] %in% dsen_selected),
+      mut_in_dsen = any(target_features$feature[target_features$type == "Mutation"] %in% dsen_selected),
+      cn_in_dsen = any(target_features$feature[target_features$type %in% c("CopyNumber", "Deletion", "Amplification")] %in% dsen_selected)
+    )
+  })
+})
+
+cat("=== Feature Type Analysis (for recovered targets) ===\n")
+cat("\nEN - Targets found by feature type:\n")
+cat(sprintf("  Expression: %.1f%%\n", 100 * mean(feature_type_recovery$expr_in_en)))
+cat(sprintf("  Mutation:   %.1f%%\n", 100 * mean(feature_type_recovery$mut_in_en)))
+cat(sprintf("  Copy Number: %.1f%%\n", 100 * mean(feature_type_recovery$cn_in_en)))
+
+cat("\nDSEN - Targets found by feature type:\n")
+cat(sprintf("  Expression: %.1f%%\n", 100 * mean(feature_type_recovery$expr_in_dsen)))
+cat(sprintf("  Mutation:   %.1f%%\n", 100 * mean(feature_type_recovery$mut_in_dsen)))
+cat(sprintf("  Copy Number: %.1f%%\n", 100 * mean(feature_type_recovery$cn_in_dsen)))
+```
+
+# Correlation with Prediction Performance
+
+Does target recovery correlate with better prediction?
+
+```{r recovery-vs-performance}
+# Load DSEN summary for MSE values
+dsen_summary <- read_csv(here("results", "dsen_results", "dsen_summary.csv"),
+                          show_col_types = FALSE)
+
+# Merge with recovery
+recovery_perf <- recovery_valid %>%
+  left_join(
+    dsen_summary %>% select(drug, mse_en, mse_dsen, pct_improvement),
+    by = "drug"
+  )
+
+# Correlation
+cor_en <- cor(recovery_perf$en_recovered, recovery_perf$mse_en, use = "complete.obs")
+cor_dsen <- cor(recovery_perf$dsen_recovered, recovery_perf$mse_dsen, use = "complete.obs")
+
+cat("=== Correlation: Target Recovery vs MSE ===\n")
+cat(sprintf("EN recovery vs EN MSE: r = %.3f\n", cor_en))
+cat(sprintf("DSEN recovery vs DSEN MSE: r = %.3f\n", cor_dsen))
+cat("\n(Negative correlation would mean better target recovery = lower MSE = better prediction)\n")
+```
+
+```{r recovery-vs-mse-plot, fig.height=5}
+p_recovery_mse <- ggplot(recovery_perf, aes(x = en_recovered, y = mse_en)) +
+  geom_point(alpha = 0.5, size = 2) +
+  geom_smooth(method = "lm", se = TRUE, color = "#4DAF4A") +
+  scale_x_continuous(labels = percent_format()) +
+  labs(
+    title = "Target Recovery vs Prediction Error (EN)",
+    subtitle = sprintf("Correlation: r = %.3f", cor_en),
+    x = "Target Recovery Rate",
+    y = "MSE (Standard EN)"
+  ) +
+  theme_minimal(base_size = 14) +
+  theme(panel.grid.minor = element_blank())
+
+print(p_recovery_mse)
+```
+
+# Summary Table
+
+```{r summary-table}
+summary_df <- tribble(
+  ~Metric, ~Value,
+  "Drugs with targets in feature set", as.character(nrow(recovery_valid)),
+  "---", "---",
+  "EN: Any target recovered (%)", sprintf("%.1f%%", 100 * en_any_recovery),
+  "EN: Full target recovered (%)", sprintf("%.1f%%", 100 * en_full_recovery),
+  "EN: Mean recovery rate", sprintf("%.1f%%", 100 * mean(recovery_valid$en_recovered, na.rm = TRUE)),
+  "---", "---",
+  "DSEN: Any target recovered (%)", sprintf("%.1f%%", 100 * dsen_any_recovery),
+  "DSEN: Full target recovered (%)", sprintf("%.1f%%", 100 * dsen_full_recovery),
+  "DSEN: Mean recovery rate", sprintf("%.1f%%", 100 * mean(recovery_valid$dsen_recovered, na.rm = TRUE)),
+  "---", "---",
+  "EN better than DSEN", sprintf("%d drugs (%.1f%%)",
+    sum(recovery_comparison$en_better), 100 * mean(recovery_comparison$en_better)),
+  "DSEN better than EN", sprintf("%d drugs (%.1f%%)",
+    sum(recovery_comparison$dsen_better), 100 * mean(recovery_comparison$dsen_better))
+)
+
+kable(summary_df, caption = "Target Recovery Summary")
+
+write_csv(summary_df, file.path(table_dir, "target_recovery_summary.csv"))
+write_csv(recovery_valid, file.path(table_dir, "target_recovery_full.csv"))
+```
+
+# Drug Repurposing: Selected Features Beyond Known Targets
+
+A key question for drug repurposing: **When models select features other than the
+known drug target, do these represent potential new indications?**
+
+If a drug's response is predicted by genes NOT related to its primary target, this
+could indicate:
+1. Off-target effects of the drug
+2. Biomarkers for drug sensitivity independent of mechanism
+3. Potential repurposing opportunities
+
+```{r repurposing-analysis}
+# For each drug, identify genes selected that are NOT known targets
+repurposing_candidates <- map_dfr(bootstrap_results, function(r) {
+  drug <- r$drug
+
+  # Get known targets for this drug (standardized)
+  known_targets <- targets_known %>%
+    filter(drug_name == drug) %>%
+    pull(target_gene) %>%
+    unique()
+
+  # DSEN selected features (using threshold)
+  dsen_freq <- r$dsen_bootstrap$cnt / r$dsen_bootstrap$nboot
+  dsen_selected <- names(dsen_freq)[dsen_freq >= FREQ_THRESHOLD]
+
+  # Get genes from selected features
+  selected_genes <- feature_info %>%
+    filter(feature %in% dsen_selected) %>%
+    distinct(gene) %>%
+    pull(gene)
+
+  # Non-target genes selected
+  non_target_genes <- setdiff(selected_genes, known_targets)
+
+  if (length(non_target_genes) == 0) return(NULL)
+
+  tibble(
+    drug = drug,
+    n_known_targets = length(known_targets),
+    targets_found = sum(known_targets %in% selected_genes),
+    n_other_genes = length(non_target_genes),
+    other_genes = paste(head(non_target_genes, 10), collapse = ";")
+  )
+})
+
+cat("=== Drug Repurposing Analysis ===\n")
+cat("Drugs analyzed:", nrow(repurposing_candidates), "\n")
+
+# Summary statistics
+repurposing_summary <- repurposing_candidates %>%
+  summarize(
+    mean_other_genes = mean(n_other_genes),
+    median_other_genes = median(n_other_genes),
+    max_other_genes = max(n_other_genes)
+  )
+
+cat(sprintf("\nMean non-target genes selected: %.1f\n", repurposing_summary$mean_other_genes))
+cat(sprintf("Median non-target genes selected: %.1f\n", repurposing_summary$median_other_genes))
+```
+
+```{r repurposing-table}
+# Show drugs with most non-target genes selected
+top_repurposing <- repurposing_candidates %>%
+  arrange(desc(n_other_genes)) %>%
+  head(20)
+
+kable(top_repurposing %>% select(-other_genes),
+      col.names = c("Drug", "Known Targets", "Targets Found", "Other Genes Selected"),
+      caption = "Drugs with most non-target genes selected by DSEN")
+```
+
+## Interpretation: Target Recovery vs Repurposing
+
+```{r recovery-interpretation-plot, fig.width=10, fig.height=6}
+# Categorize drugs by target recovery status
+repurposing_interpretation <- repurposing_candidates %>%
+  mutate(
+    recovery_status = case_when(
+      n_known_targets == 0 ~ "No known target",
+      targets_found == n_known_targets ~ "All targets found",
+      targets_found > 0 ~ "Partial recovery",
+      TRUE ~ "No targets found"
+    )
+  )
+
+# Plot
+p_interpret <- ggplot(repurposing_interpretation,
+                       aes(x = recovery_status, y = n_other_genes,
+                           fill = recovery_status)) +
+  geom_boxplot(alpha = 0.7, outlier.alpha = 0.3) +
+  scale_fill_brewer(palette = "Set2") +
+  labs(
+    title = "Non-Target Gene Selection by Target Recovery Status",
+    subtitle = "Do drugs without target recovery select more alternative genes?",
+    x = "Target Recovery Status",
+    y = "Number of Non-Target Genes Selected"
+  ) +
+  theme_minimal(base_size = 14) +
+  theme(legend.position = "none")
+
+print(p_interpret)
+
+ggsave(file.path(fig_dir, "repurposing_by_recovery.pdf"),
+       p_interpret, width = 10, height = 6)
+```
+
+## Repurposing Hypothesis
+
+```{r repurposing-hypothesis}
+# Key insight: When target NOT recovered, what genes ARE selected?
+missed_targets_analysis <- repurposing_candidates %>%
+  filter(targets_found == 0, n_known_targets > 0) %>%
+  arrange(desc(n_other_genes)) %>%
+  head(15)
+
+cat("\n=== Drugs Where Target Missed But Other Genes Selected ===\n")
+cat("(Potential repurposing candidates)\n\n")
+
+if (nrow(missed_targets_analysis) > 0) {
+  for (i in 1:min(5, nrow(missed_targets_analysis))) {
+    row <- missed_targets_analysis[i, ]
+    cat(sprintf("%s: Expected targets not found, but selected %d other genes\n",
+                row$drug, row$n_other_genes))
+    cat(sprintf("   Top genes: %s\n\n", row$other_genes))
+  }
+}
+```
+
+# Conclusions
+
+## Key Findings
+
+1. **Target Recovery**: Both EN and DSEN recover known drug targets, validating that
+   the models capture some biological signal. Recovery rates vary by drug class.
+
+2. **Gene Name Standardization**: Critical for accurate analysis - many GDSC target
+   names are aliases (P38→MAPK14, MEK1→MAP2K1) that require mapping.
+
+3. **Pathway Differences**: Kinase inhibitors and targeted therapies show higher
+   recovery rates, consistent with stronger genomic signatures.
+
+4. **Feature Types**: Expression features most commonly capture targets, followed
+   by mutation and copy number features.
+
+5. **Repurposing Signal**: Drugs with missed targets often select other biologically
+   relevant genes, suggesting potential repurposing opportunities or alternative
+   mechanisms of action.
+
+## Implications
+
+- **Biological Validation**: Target recovery provides validation that models learn
+  meaningful biology, not just statistical associations.
+
+- **Repurposing Opportunity**: When known targets are NOT selected but other genes
+  are, this may indicate off-target effects or biomarkers for patient selection.
+
+- **Limitations**: Not all targets will be recovered - some drugs have complex
+  mechanisms, and genomic features may not capture all relevant biology.
+
+# Session Info
+
+```{r session-info}
+sessionInfo()
+```

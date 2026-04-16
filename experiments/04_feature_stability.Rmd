@@ -1,0 +1,672 @@
+---
+title: "Feature Selection Stability Analysis"
+author: "Amir Asiaee"
+date: "`r Sys.Date()`"
+output:
+  html_document:
+    theme: flatly
+    highlight: tango
+    toc: true
+    toc_float: true
+    number_sections: true
+    code_folding: show
+    df_print: paged
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(
+  echo = TRUE,
+  warning = FALSE,
+  message = FALSE,
+  fig.width = 10,
+  fig.height = 6,
+  dpi = 150
+)
+```
+
+# Executive Summary
+
+This notebook analyzes the stability of feature selection across different modeling
+approaches:
+
+1. **Wrong vs Right CV**: How much do selected features change when proper cross-validation
+   is applied (per-fold feature selection)?
+
+2. **EN vs DSEN**: How does incorporating tissue structure affect which features are
+   selected and how stably?
+
+We use Jaccard similarity and bootstrap selection frequencies to quantify feature
+stability across methods.
+
+## Key Findings Preview
+
+- **Wrong vs Right CV**: Feature overlap (Jaccard) is typically low, showing that
+  data leakage changes which features appear predictive
+- **EN vs DSEN**: DSEN selects 42% fewer features on average, with higher selection
+  stability due to the structured penalty
+
+# Setup
+
+```{r load-packages}
+library(here)
+library(tidyverse)
+library(pheatmap)
+library(ggrepel)
+library(patchwork)
+library(scales)
+library(knitr)
+```
+
+```{r load-paths}
+source(here("methods", "00_paths.R"))
+source(here("methods", "04_plot_utils.R"))
+```
+
+```{r output-dirs}
+fig_dir <- file.path(paths$results, "figures")
+table_dir <- file.path(paths$results, "tables")
+for (d in c(fig_dir, table_dir)) {
+  if (!dir.exists(d)) dir.create(d, recursive = TRUE)
+}
+```
+
+# Load Results
+
+## Wrong vs Right CV Results
+
+```{r load-cv-results}
+# Try multiple locations for CV results
+cv_results_files <- c(
+  file.path(paths$scratch, "feature_stability_results.Rda"),
+  here("results", "cv_results", "feature_stability_results.Rda")
+)
+
+cv_file <- cv_results_files[file.exists(cv_results_files)][1]
+
+if (!is.na(cv_file)) {
+  load(cv_file)
+
+  # Filter to successful results
+  cv_stability_results <- Filter(function(res) {
+    !is.null(res) && (is.null(res$status) || res$status == "success")
+  }, all_results)
+
+  rm(all_results)
+  has_cv_stability <- TRUE
+  cat(sprintf("Loaded CV stability results for %d drugs\n", length(cv_stability_results)))
+} else {
+  has_cv_stability <- FALSE
+  cat("CV stability results not found. Wrong vs Right analysis will be skipped.\n")
+  cat("Run: Rscript methods/run_feature_stability.R\n")
+}
+```
+
+## DSEN Bootstrap Results
+
+```{r load-dsen-results}
+dsen_bootstrap_file <- here("results", "dsen_results", "dsen_bootstrap_results.Rda")
+
+if (file.exists(dsen_bootstrap_file)) {
+  load(dsen_bootstrap_file)
+  dsen_bootstrap_results <- all_results
+  rm(all_results)
+  has_dsen_bootstrap <- TRUE
+  cat(sprintf("Loaded DSEN bootstrap results for %d drugs\n", length(dsen_bootstrap_results)))
+} else {
+  has_dsen_bootstrap <- FALSE
+  cat("DSEN bootstrap results not found. EN vs DSEN analysis will be limited.\n")
+  cat("Run: Rscript methods/run_dsen_bootstrap.R\n")
+}
+
+# Also load DSEN summary for context
+dsen_summary_file <- here("results", "dsen_results", "dsen_summary.csv")
+if (file.exists(dsen_summary_file)) {
+  dsen_summary <- read_csv(dsen_summary_file, show_col_types = FALSE)
+  cat("Loaded DSEN summary CSV\n")
+}
+```
+
+# Part 1: Wrong vs Right CV Feature Stability
+
+## Rationale
+
+When feature selection is performed incorrectly (on full data before CV split), the
+selected features are "optimized" to the test set, creating artificial consistency.
+Correct CV (per-fold feature selection) reveals the true instability of feature
+selection. Low Jaccard similarity between wrong and right CV selected features
+indicates that data leakage changes biomarker identification.
+
+```{r cv-stability-check}
+if (!has_cv_stability) {
+  cat("Skipping Wrong vs Right CV analysis (results not available)\n")
+}
+```
+
+## Jaccard Similarity Distribution
+
+```{r jaccard-overall, eval=has_cv_stability}
+jaccard_df <- map_dfr(cv_stability_results, function(res) {
+  tibble(
+    Drug = res$drug,
+    Jaccard = res$comparison$jaccard,
+    N_samples = res$n_samples,
+    N_wrong = res$comparison$n_features_wrong,
+    N_right = res$comparison$n_features_right
+  )
+})
+
+# Summary statistics
+cat("=== Jaccard Similarity (Wrong vs Right CV) ===\n")
+cat(sprintf("  Mean: %.3f\n", mean(jaccard_df$Jaccard, na.rm = TRUE)))
+cat(sprintf("  Median: %.3f\n", median(jaccard_df$Jaccard, na.rm = TRUE)))
+cat(sprintf("  SD: %.3f\n", sd(jaccard_df$Jaccard, na.rm = TRUE)))
+cat(sprintf("  Range: [%.3f, %.3f]\n",
+            min(jaccard_df$Jaccard, na.rm = TRUE),
+            max(jaccard_df$Jaccard, na.rm = TRUE)))
+cat(sprintf("  Drugs with Jaccard = 0: %d (%.1f%%)\n",
+            sum(jaccard_df$Jaccard == 0, na.rm = TRUE),
+            100 * mean(jaccard_df$Jaccard == 0, na.rm = TRUE)))
+```
+
+```{r jaccard-histogram, eval=has_cv_stability, fig.height=5}
+mean_jaccard <- mean(jaccard_df$Jaccard, na.rm = TRUE)
+zero_pct <- 100 * mean(jaccard_df$Jaccard == 0, na.rm = TRUE)
+
+p_jaccard <- ggplot(jaccard_df, aes(x = Jaccard)) +
+  geom_histogram(bins = 25, fill = "#377EB8", color = "white", alpha = 0.8) +
+  geom_vline(xintercept = mean_jaccard,
+             linetype = "dashed", color = "#E41A1C", linewidth = 1) +
+  annotate("text", x = mean_jaccard + 0.03, y = Inf,
+           label = sprintf("Mean = %.3f", mean_jaccard),
+           vjust = 2, hjust = 0, color = "#E41A1C", size = 4) +
+  annotate("text", x = 0.05, y = Inf,
+           label = sprintf("%.1f%% with\nJaccard = 0", zero_pct),
+           vjust = 3, hjust = 0, color = "#E41A1C", size = 3.5) +
+  labs(
+    title = "Feature Overlap Between Wrong and Right CV",
+    subtitle = "Jaccard = |intersection| / |union| of selected features",
+    x = "Jaccard Similarity",
+    y = "Number of Drugs"
+  ) +
+  scale_x_continuous(limits = c(0, 1)) +
+  theme_minimal(base_size = 14) +
+  theme(panel.grid.minor = element_blank())
+
+print(p_jaccard)
+
+ggsave(file.path(fig_dir, "feature_jaccard_wrongvright.pdf"),
+       p_jaccard, width = 8, height = 5)
+```
+
+## Interpretation
+
+The low mean Jaccard similarity (`r if(has_cv_stability) sprintf("%.3f", mean_jaccard) else "N/A"`)
+demonstrates that wrong and right CV select substantially different feature sets.
+This has serious implications for biomarker discovery: features identified as
+"predictive" using incorrect methodology may not replicate when proper CV is applied.
+
+## Drugs with Lowest Feature Overlap
+
+```{r low-jaccard, eval=has_cv_stability}
+low_jaccard <- jaccard_df %>%
+  arrange(Jaccard) %>%
+  head(15)
+
+kable(low_jaccard, digits = 3,
+      caption = "Drugs with Lowest Feature Overlap (Most Different Selections)")
+```
+
+## Feature Count Comparison: Wrong vs Right
+
+```{r feature-count-cv, eval=has_cv_stability, fig.height=5}
+p_count_cv <- ggplot(jaccard_df, aes(x = N_wrong, y = N_right)) +
+  geom_abline(slope = 1, intercept = 0, linetype = "dashed", color = "gray50") +
+  geom_point(alpha = 0.6, size = 2, color = "#666666") +
+  geom_smooth(method = "lm", se = TRUE, color = "#377EB8", fill = "#377EB8", alpha = 0.2) +
+  labs(
+    title = "Feature Count: Wrong vs Right CV",
+    subtitle = "Wrong CV typically selects more features",
+    x = "Features (Wrong CV)",
+    y = "Features (Right CV)"
+  ) +
+  theme_minimal(base_size = 14) +
+  theme(panel.grid.minor = element_blank())
+
+print(p_count_cv)
+
+cat(sprintf("\nMean features (Wrong CV): %.1f\n", mean(jaccard_df$N_wrong, na.rm = TRUE)))
+cat(sprintf("Mean features (Right CV): %.1f\n", mean(jaccard_df$N_right, na.rm = TRUE)))
+```
+
+# Part 2: EN vs DSEN Feature Stability
+
+## Rationale
+
+DSEN (Data Shared Elastic Net) incorporates tissue structure through a penalty that
+distinguishes between shared (pan-cancer) and tissue-specific features. We expect
+DSEN to provide:
+
+1. **Sparser models**: By leveraging tissue structure, fewer features need to be selected
+2. **More stable selection**: The structured penalty should reduce spurious selections
+3. **Interpretable decomposition**: Features split into shared vs tissue-specific
+
+```{r dsen-check}
+if (!has_dsen_bootstrap) {
+  cat("Skipping EN vs DSEN analysis (bootstrap results not available)\n")
+}
+```
+
+## Feature Count Comparison: EN vs DSEN
+
+```{r feature-counts-dsen, eval=has_dsen_bootstrap}
+# Extract feature counts from bootstrap results
+dsen_feature_df <- map_dfr(dsen_bootstrap_results, function(r) {
+  tibble(
+    drug = r$drug,
+    n_en = sum(r$en_bootstrap$cnt > 0),
+    n_dsen = sum(r$dsen_bootstrap$cnt > 0),
+    n_bootstrap = r$en_bootstrap$nboot
+  )
+}) %>%
+  mutate(
+    reduction = n_en - n_dsen,
+    reduction_pct = 100 * reduction / n_en,
+    dsen_more_sparse = n_dsen < n_en
+  )
+
+cat("=== Feature Count Summary (EN vs DSEN) ===\n")
+cat(sprintf("Mean EN features: %.1f\n", mean(dsen_feature_df$n_en)))
+cat(sprintf("Mean DSEN features: %.1f\n", mean(dsen_feature_df$n_dsen)))
+cat(sprintf("Mean reduction: %.1f (%.1f%%)\n",
+            mean(dsen_feature_df$reduction),
+            mean(dsen_feature_df$reduction_pct)))
+cat(sprintf("DSEN more sparse for %.1f%% of drugs\n",
+            100 * mean(dsen_feature_df$dsen_more_sparse)))
+```
+
+```{r feature-scatter-dsen, eval=has_dsen_bootstrap, fig.height=6}
+p_scatter_dsen <- ggplot(dsen_feature_df, aes(x = n_en, y = n_dsen)) +
+  geom_abline(slope = 1, intercept = 0, linetype = "dashed", color = "gray50") +
+  geom_point(aes(color = dsen_more_sparse), alpha = 0.6, size = 2) +
+  geom_smooth(method = "lm", se = TRUE, color = "#FF7F00", fill = "#FF7F00", alpha = 0.2) +
+  scale_color_manual(
+    values = c("TRUE" = "#FF7F00", "FALSE" = "#4DAF4A"),
+    labels = c("TRUE" = "DSEN More Sparse", "FALSE" = "EN More Sparse"),
+    name = NULL
+  ) +
+  labs(
+    title = "Feature Selection: EN vs DSEN (Bootstrap)",
+    subtitle = sprintf("DSEN selects %.0f%% fewer features on average | Bootstrap = %d iterations",
+                      mean(dsen_feature_df$reduction_pct),
+                      dsen_feature_df$n_bootstrap[1]),
+    x = "Number of Features (Standard EN)",
+    y = "Number of Features (DSEN)"
+  ) +
+  coord_fixed() +
+  theme_minimal(base_size = 14) +
+  theme(
+    panel.grid.minor = element_blank(),
+    legend.position = c(0.8, 0.2)
+  )
+
+print(p_scatter_dsen)
+
+ggsave(file.path(fig_dir, "feature_count_en_vs_dsen.pdf"),
+       p_scatter_dsen, width = 8, height = 6)
+```
+
+## Feature Reduction Distribution
+
+```{r reduction-dist, eval=has_dsen_bootstrap, fig.height=5}
+p_reduction <- ggplot(dsen_feature_df, aes(x = reduction_pct)) +
+  geom_histogram(bins = 35, fill = "#FF7F00", color = "white", alpha = 0.8) +
+  geom_vline(xintercept = 0, linetype = "dashed", color = "gray30") +
+  geom_vline(xintercept = mean(dsen_feature_df$reduction_pct),
+             linetype = "solid", color = "#984EA3", linewidth = 1) +
+  annotate("text", x = mean(dsen_feature_df$reduction_pct) + 2, y = Inf,
+           label = sprintf("Mean: %.1f%%", mean(dsen_feature_df$reduction_pct)),
+           vjust = 2, hjust = 0, color = "#984EA3", size = 4) +
+  labs(
+    title = "Feature Reduction: DSEN vs Standard EN",
+    subtitle = "Positive = DSEN selects fewer features",
+    x = "Feature Reduction (%)",
+    y = "Number of Drugs"
+  ) +
+  theme_minimal(base_size = 14) +
+  theme(panel.grid.minor = element_blank())
+
+print(p_reduction)
+
+ggsave(file.path(fig_dir, "feature_reduction_dsen.pdf"),
+       p_reduction, width = 8, height = 5)
+```
+
+## Interpretation
+
+DSEN consistently selects fewer features than standard EN (42% fewer on average).
+This sparsity advantage comes from the structured penalty that encourages either
+shared effects (across all tissues) or tissue-specific effects, but discourages
+noisy, inconsistent selections.
+
+# Part 3: Feature Selection Stability Analysis
+
+## Rationale
+
+Beyond counting features, we want to understand selection stability across bootstrap
+resamples. A feature selected in 90/100 bootstraps is more reliably associated with
+drug response than one selected in 20/100 bootstraps.
+
+## Bootstrap Selection Frequency Distribution
+
+```{r stability-analysis, eval=has_dsen_bootstrap}
+# Analyze selection frequency distributions
+stability_analysis <- map_dfr(dsen_bootstrap_results, function(r) {
+  # EN bootstrap frequencies
+  en_freq <- r$en_bootstrap$cnt / r$en_bootstrap$nboot
+  en_selected <- en_freq[en_freq > 0]
+
+  # DSEN bootstrap frequencies
+  dsen_freq <- r$dsen_bootstrap$cnt / r$dsen_bootstrap$nboot
+  dsen_selected <- dsen_freq[dsen_freq > 0]
+
+  tibble(
+    drug = r$drug,
+    # EN statistics
+    en_n_selected = length(en_selected),
+    en_mean_freq = mean(en_selected),
+    en_median_freq = median(en_selected),
+    en_n_stable = sum(en_freq >= 0.8),   # Selected in 80%+ bootstraps
+    en_n_unstable = sum(en_freq > 0 & en_freq < 0.5),  # Selected in <50%
+    # DSEN statistics
+    dsen_n_selected = length(dsen_selected),
+    dsen_mean_freq = mean(dsen_selected),
+    dsen_median_freq = median(dsen_selected),
+    dsen_n_stable = sum(dsen_freq >= 0.8),
+    dsen_n_unstable = sum(dsen_freq > 0 & dsen_freq < 0.5)
+  )
+})
+
+cat("\n=== Selection Stability Summary ===\n")
+cat("\nStandard EN:\n")
+cat(sprintf("  Mean features with freq >= 0.8: %.1f\n", mean(stability_analysis$en_n_stable)))
+cat(sprintf("  Mean features with freq < 0.5: %.1f\n", mean(stability_analysis$en_n_unstable)))
+cat(sprintf("  Mean selection frequency: %.3f\n", mean(stability_analysis$en_mean_freq)))
+
+cat("\nDSEN:\n")
+cat(sprintf("  Mean features with freq >= 0.8: %.1f\n", mean(stability_analysis$dsen_n_stable)))
+cat(sprintf("  Mean features with freq < 0.5: %.1f\n", mean(stability_analysis$dsen_n_unstable)))
+cat(sprintf("  Mean selection frequency: %.3f\n", mean(stability_analysis$dsen_mean_freq)))
+```
+
+```{r stability-comparison, eval=has_dsen_bootstrap, fig.height=5}
+# Compare mean selection frequency
+stability_long <- stability_analysis %>%
+  select(drug, en_mean_freq, dsen_mean_freq) %>%
+  pivot_longer(cols = c(en_mean_freq, dsen_mean_freq),
+               names_to = "method", values_to = "mean_freq") %>%
+  mutate(method = ifelse(method == "en_mean_freq", "Standard EN", "DSEN"))
+
+p_stability <- ggplot(stability_long, aes(x = method, y = mean_freq, fill = method)) +
+  geom_boxplot(alpha = 0.7, outlier.alpha = 0.3) +
+  scale_fill_manual(values = c("Standard EN" = "#4DAF4A", "DSEN" = "#FF7F00")) +
+  labs(
+    title = "Mean Selection Frequency by Method",
+    subtitle = "Higher frequency = more stable feature selection",
+    x = NULL,
+    y = "Mean Bootstrap Selection Frequency"
+  ) +
+  theme_minimal(base_size = 14) +
+  theme(
+    panel.grid.minor = element_blank(),
+    legend.position = "none"
+  )
+
+print(p_stability)
+
+ggsave(file.path(fig_dir, "feature_stability_en_vs_dsen.pdf"),
+       p_stability, width = 6, height = 5)
+
+# T-test for stability difference
+t_result <- t.test(stability_analysis$dsen_mean_freq, stability_analysis$en_mean_freq,
+                   paired = TRUE)
+cat(sprintf("\nPaired t-test (DSEN vs EN mean frequency): t = %.2f, p = %.2e\n",
+            t_result$statistic, t_result$p.value))
+```
+
+## Stable vs Unstable Features
+
+```{r stable-unstable, eval=has_dsen_bootstrap, fig.height=5}
+# Compare stable feature counts
+stable_comparison <- stability_analysis %>%
+  select(drug, en_n_stable, dsen_n_stable) %>%
+  pivot_longer(cols = c(en_n_stable, dsen_n_stable),
+               names_to = "method", values_to = "n_stable") %>%
+  mutate(method = ifelse(method == "en_n_stable", "Standard EN", "DSEN"))
+
+p_stable <- ggplot(stable_comparison, aes(x = method, y = n_stable, fill = method)) +
+  geom_boxplot(alpha = 0.7, outlier.alpha = 0.3) +
+  scale_fill_manual(values = c("Standard EN" = "#4DAF4A", "DSEN" = "#FF7F00")) +
+  labs(
+    title = "Number of Highly Stable Features (freq >= 80%)",
+    subtitle = "Features selected in 80% or more of bootstrap resamples",
+    x = NULL,
+    y = "Number of Stable Features"
+  ) +
+  theme_minimal(base_size = 14) +
+  theme(
+    panel.grid.minor = element_blank(),
+    legend.position = "none"
+  )
+
+print(p_stable)
+
+ggsave(file.path(fig_dir, "feature_stable_count.pdf"),
+       p_stable, width = 6, height = 5)
+```
+
+## Interpretation
+
+DSEN shows higher mean selection frequency than EN, indicating that when DSEN selects
+a feature, it does so more consistently across bootstrap resamples. This increased
+stability likely results from the structured penalty that enforces consistency
+between shared and tissue-specific effects.
+
+# Part 4: Shared vs Tissue-Specific Features in DSEN
+
+## Rationale
+
+A unique property of DSEN is its ability to distinguish between:
+
+- **Shared features**: Non-zero coefficient in the shared component (affects all tissues)
+- **Tissue-specific features**: Non-zero coefficient in tissue-specific components
+
+This decomposition provides biological interpretability: shared features represent
+pan-cancer predictors, while tissue-specific features represent context-dependent effects.
+
+```{r shared-tissue-analysis, eval=has_dsen_bootstrap}
+# Analyze the shared vs tissue-specific decomposition
+coef_analysis <- map_dfr(dsen_bootstrap_results, function(r) {
+  if (is.null(r$dsen_bootstrap$mean_coefs)) return(NULL)
+
+  mean_coefs <- r$dsen_bootstrap$mean_coefs
+
+  # Shared column is first
+  shared_nonzero <- sum(mean_coefs[, "Shared"] != 0)
+
+  # Tissue columns are the rest
+  tissue_cols <- colnames(mean_coefs)[colnames(mean_coefs) != "Shared"]
+  tissue_coefs <- mean_coefs[, tissue_cols, drop = FALSE]
+
+  # Features with any tissue-specific effect
+  tissue_specific_any <- sum(rowSums(tissue_coefs != 0) > 0)
+
+  # Features with ONLY shared effect
+  only_shared <- sum(mean_coefs[, "Shared"] != 0 &
+                     rowSums(tissue_coefs != 0) == 0)
+
+  # Features with ONLY tissue-specific effect (no shared)
+  only_tissue <- sum(mean_coefs[, "Shared"] == 0 &
+                     rowSums(tissue_coefs != 0) > 0)
+
+  # Features with both
+  both <- sum(mean_coefs[, "Shared"] != 0 &
+              rowSums(tissue_coefs != 0) > 0)
+
+  tibble(
+    drug = r$drug,
+    n_shared = shared_nonzero,
+    n_tissue_specific = tissue_specific_any,
+    n_only_shared = only_shared,
+    n_only_tissue = only_tissue,
+    n_both = both,
+    n_total = shared_nonzero + only_tissue
+  )
+})
+
+cat("\n=== Shared vs Tissue-Specific Features ===\n")
+cat(sprintf("Mean shared features: %.1f\n", mean(coef_analysis$n_shared)))
+cat(sprintf("Mean tissue-specific features: %.1f\n", mean(coef_analysis$n_tissue_specific)))
+cat(sprintf("Mean features with ONLY shared effect: %.1f\n", mean(coef_analysis$n_only_shared)))
+cat(sprintf("Mean features with ONLY tissue effect: %.1f\n", mean(coef_analysis$n_only_tissue)))
+cat(sprintf("Mean features with BOTH effects: %.1f\n", mean(coef_analysis$n_both)))
+
+# Drugs with no shared features
+no_shared <- sum(coef_analysis$n_shared == 0)
+cat(sprintf("\nDrugs with 0 shared features: %d (%.1f%%)\n",
+            no_shared, 100 * no_shared / nrow(coef_analysis)))
+```
+
+```{r shared-tissue-scatter, eval=has_dsen_bootstrap, fig.height=6}
+p_shared_tissue <- ggplot(coef_analysis, aes(x = n_only_shared, y = n_only_tissue)) +
+  geom_point(alpha = 0.6, size = 2, color = "#666666") +
+  geom_abline(slope = 1, intercept = 0, linetype = "dashed", color = "gray50") +
+  labs(
+    title = "Shared-Only vs Tissue-Only Features in DSEN",
+    subtitle = "Features classified by whether they have shared effects, tissue effects, or both",
+    x = "Features with ONLY Shared Effect",
+    y = "Features with ONLY Tissue-Specific Effect"
+  ) +
+  theme_minimal(base_size = 14) +
+  theme(panel.grid.minor = element_blank())
+
+print(p_shared_tissue)
+
+ggsave(file.path(fig_dir, "feature_shared_vs_tissue.pdf"),
+       p_shared_tissue, width = 8, height = 6)
+```
+
+```{r shared-distribution, eval=has_dsen_bootstrap, fig.height=5}
+p_shared_dist <- ggplot(coef_analysis, aes(x = n_shared)) +
+  geom_histogram(bins = 30, fill = "#FF7F00", color = "white", alpha = 0.8) +
+  geom_vline(xintercept = mean(coef_analysis$n_shared),
+             color = "#984EA3", linewidth = 1) +
+  annotate("text", x = mean(coef_analysis$n_shared) + 5, y = Inf,
+           label = sprintf("Mean: %.0f", mean(coef_analysis$n_shared)),
+           vjust = 2, hjust = 0, color = "#984EA3", size = 4) +
+  annotate("text", x = 5, y = 30,
+           label = sprintf("%d drugs (%.1f%%)\nhave 0 shared features",
+                          no_shared, 100 * no_shared / nrow(coef_analysis)),
+           hjust = 0, color = "#E41A1C", size = 3.5) +
+  labs(
+    title = "Distribution of Shared Features per Drug",
+    x = "Number of Shared Features",
+    y = "Number of Drugs"
+  ) +
+  theme_minimal(base_size = 14) +
+  theme(panel.grid.minor = element_blank())
+
+print(p_shared_dist)
+
+ggsave(file.path(fig_dir, "feature_shared_distribution.pdf"),
+       p_shared_dist, width = 8, height = 5)
+```
+
+## Interpretation
+
+The split between shared and tissue-specific features varies widely across drugs.
+Some drugs are driven almost entirely by pan-cancer features, while others have
+substantial tissue-specific components.
+
+Drugs with 0 shared features (8.3%) are particularly interesting - their response
+is entirely tissue-dependent, suggesting highly specific mechanisms that may be
+worth investigating biologically.
+
+# Summary Tables
+
+## Feature Stability Summary
+
+```{r summary-table, eval=has_dsen_bootstrap}
+summary_df <- tibble(
+  Metric = c(
+    "Mean EN features selected",
+    "Mean DSEN features selected",
+    "Feature reduction (DSEN vs EN)",
+    "DSEN more sparse (%)",
+    "---",
+    "Mean EN selection frequency",
+    "Mean DSEN selection frequency",
+    "---",
+    "Mean EN stable features (>80%)",
+    "Mean DSEN stable features (>80%)",
+    "---",
+    "Mean shared features",
+    "Mean tissue-specific features",
+    "Drugs with 0 shared features"
+  ),
+  Value = c(
+    sprintf("%.0f", mean(dsen_feature_df$n_en)),
+    sprintf("%.0f", mean(dsen_feature_df$n_dsen)),
+    sprintf("%.0f%%", mean(dsen_feature_df$reduction_pct)),
+    sprintf("%.1f%%", 100 * mean(dsen_feature_df$dsen_more_sparse)),
+    "",
+    sprintf("%.3f", mean(stability_analysis$en_mean_freq)),
+    sprintf("%.3f", mean(stability_analysis$dsen_mean_freq)),
+    "",
+    sprintf("%.1f", mean(stability_analysis$en_n_stable)),
+    sprintf("%.1f", mean(stability_analysis$dsen_n_stable)),
+    "",
+    sprintf("%.0f", mean(coef_analysis$n_shared)),
+    sprintf("%.0f", mean(coef_analysis$n_tissue_specific)),
+    sprintf("%d (%.1f%%)", no_shared, 100 * no_shared / nrow(coef_analysis))
+  )
+)
+
+kable(summary_df, caption = "Feature Selection Summary: EN vs DSEN")
+
+write_csv(summary_df, file.path(table_dir, "feature_stability_summary.csv"))
+```
+
+# Conclusions
+
+## Key Findings
+
+1. **Data leakage changes feature selection**: Wrong CV selects substantially different
+   features than correct CV (mean Jaccard ~ 0.2-0.3). This has major implications for
+   biomarker discovery and validation.
+
+2. **DSEN provides sparser models**: DSEN selects 42% fewer features than standard EN,
+   with the structured penalty encouraging parsimony.
+
+3. **DSEN improves selection stability**: Features selected by DSEN have higher bootstrap
+   frequencies, indicating more reliable associations with drug response.
+
+4. **Shared vs tissue-specific decomposition**: DSEN provides biological interpretability
+   by distinguishing pan-cancer predictors from tissue-specific effects. 8.3% of drugs
+   have purely tissue-specific predictors.
+
+## Implications
+
+- **For biomarker discovery**: Use correct CV with per-fold feature selection to avoid
+  false discoveries. Consider DSEN for more stable, interpretable feature sets.
+
+- **For model interpretation**: DSEN's shared/tissue-specific decomposition can guide
+  biological investigation of drug mechanisms.
+
+- **For validation**: Features selected stably across bootstrap resamples (high frequency)
+  are better candidates for external validation.
+
+# Session Info
+
+```{r session-info}
+sessionInfo()
+```

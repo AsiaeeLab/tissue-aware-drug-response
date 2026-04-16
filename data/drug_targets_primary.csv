@@ -1,0 +1,266 @@
+drug_name,target_gene,target_pathway,source
+Tanespimycin,HSP90AA1,Protein stability and degradation,GDSC
+VX-702,P38,JNK and p38 signaling,GDSC
+Motesanib,KDR,RTK signaling,GDSC
+KU-55933,ATM,Genome integrity,GDSC
+Elesclomol,HSP90AA1,Protein stability and degradation,GDSC
+Afatinib,EGFR,EGFR signaling,GDSC
+Vismodegib,SMO,Other,GDSC
+PLX-4720,BRAF,ERK MAPK signaling,GDSC
+BX796,NA,NA,not_found
+NU7441,DNAPK,Genome integrity,GDSC
+SL0101,RSK,"Other, kinases",GDSC
+Doramapimod,P38,JNK and p38 signaling,GDSC
+JNK Inhibitor VIII,JNK,JNK and p38 signaling,GDSC
+681640,WEE1,Cell cycle,GDSC
+Nutlin-3a (-),MDM2,p53 pathway,GDSC
+PD173074,FGFR1,RTK signaling,GDSC
+ZM447439,AURKA,Mitosis,GDSC
+RO-3306,CDK1,Cell cycle,GDSC
+MK-2206,AKT1,PI3K/MTOR signaling,GDSC
+Palbociclib,CDK4,Cell cycle,GDSC
+Dactolisib,PI3K (CLASS 1),PI3K/MTOR signaling,GDSC
+Pictilisib,PI3K (CLASS 1),PI3K/MTOR signaling,GDSC
+AZD8055,MTOR,PI3K/MTOR signaling,GDSC
+PD0325901,MEK1,ERK MAPK signaling,GDSC
+SB590885,BRAF,ERK MAPK signaling,GDSC
+Selumetinib,MEK1,ERK MAPK signaling,GDSC
+AZD6482,PI3KBETA,PI3K/MTOR signaling,GDSC
+CCT007093,PPM1D,Cell cycle,GDSC
+EHT-1864,RAC1,Cytoskeleton,GDSC
+Avagacestat,AMYLOID BETA20,Other,GDSC
+BMS-536924,IGF1R,IGF1R signaling,GDSC
+Cetuximab,EGFR,EGFR signaling,GDSC
+PF-4708671,S6K1,PI3K/MTOR signaling,GDSC
+Serdemetan,MDM2,p53 pathway,GDSC
+HG-5-113-01,AURKA,Mitosis,GDSC
+HG-5-88-01,TAK1,"Other, kinases",GDSC
+TW 37,BCL2,Apoptosis regulation,GDSC
+XMD11-85h,LRRK2,"Other, kinases",GDSC
+ZG-10,JNK1,JNK and p38 signaling,GDSC
+XMD8-92,ERK5,ERK MAPK signaling,GDSC
+QL-VIII-58,MTOR,Other,GDSC
+CCT-018159,HSP90AA1,Protein stability and degradation,GDSC
+Rucaparib,PARP1,Genome integrity,GDSC
+GSK269962A,ROCK1,Cytoskeleton,GDSC
+SB-505124,NA,NA,not_found
+Tamoxifen,ESR1,Hormone-related,GDSC
+QL-XII-61,BMX,"Other, kinases",GDSC
+JQ1,BRD2,Chromatin other,GDSC
+PFI-1,BRD4,Chromatin other,GDSC
+IOX2,EGLN1,Other,GDSC
+UNC0638,G9A AND GLP METHYLTRANSFERASES,Chromatin histone methylation,GDSC
+YK-4-279,RNA HELICASE A,Other,GDSC
+CHIR-99021,GSK3A,WNT signaling,GDSC
+(5Z)-7-Oxozeaenol,TAK1,"Other, kinases",GDSC
+Piperlongumine,INDUCES REACTIVE OXYGEN SPECIES,Other,GDSC
+Daporinad,"NAMPT",Metabolism,GDSC
+Talazoparib,PARP1,Genome integrity,GDSC
+rTRAIL,TRAIL RECEPTOR AGONIST,Apoptosis regulation,GDSC
+UNC1215,L3MBTL3,Chromatin other,GDSC
+SGC0946,DOT1L,Chromatin histone methylation,GDSC
+XAV939,TNKS1,WNT signaling,GDSC
+PLX-4720_repl_1371,BRAF,ERK MAPK signaling,GDSC
+Trametinib,MEK1,ERK MAPK signaling,GDSC
+Dabrafenib,BRAF,ERK MAPK signaling,GDSC
+Temozolomide,DNA ALKYLATING AGENT,DNA replication,GDSC
+Afatinib_repl_1377,EGFR,EGFR signaling,GDSC
+Bleomycin (50 uM),DSDNA BREAK INDUCTION,DNA replication,GDSC
+SN-38,TOP1,DNA replication,GDSC
+Olaparib,PARP1,Genome integrity,GDSC
+Selumetinib_repl_1498,MEK1,ERK MAPK signaling,GDSC
+Bicalutamide,AR,Hormone-related,GDSC
+Refametinib,MEK1,ERK MAPK signaling,GDSC
+Pictilisib_repl_1527,PI3K (CLASS 1),PI3K/MTOR signaling,GDSC
+Pevonedistat,"NAE",Other,GDSC
+Doxorubicin,ANTHRACYCLINE,DNA replication,GDSC
+Etoposide,TOP2,DNA replication,GDSC
+Gemcitabine,PYRIMIDINE ANTIMETABOLITE,DNA replication,GDSC
+Mitomycin-C,DNA CROSSLINKER,DNA replication,GDSC
+Vinorelbine,MICROTUBULE DESTABILISER,Mitosis,GDSC
+NSC-87877,SHP-1 (PTPN6),Other,GDSC
+Bicalutamide_repl_150,AR,Hormone-related,GDSC
+QS11,ARFGAP1,Other,GDSC
+CP466722,ATM,Genome integrity,GDSC
+Midostaurin,PKC,Other,GDSC
+CHIR-99021_repl_154,GSK3A,WNT signaling,GDSC
+Ponatinib,ABL1,"Other, kinases",GDSC
+AZD6482_repl_156,PI3KBETA,PI3K/MTOR signaling,GDSC
+JNK-9L,JNK2,JNK and p38 signaling,GDSC
+PF-562271,FAK,Cytoskeleton,GDSC
+HG6-64-1,BRAF,ERK MAPK signaling,GDSC
+JQ1_repl_163,BRD2,Chromatin other,GDSC
+JQ12,HDAC1,Chromatin histone acetylation,GDSC
+DMOG,HIF-PH,Metabolism,GDSC
+FTI-277,FARNESYL-TRANSFERASE (FNTA),Other,GDSC
+OSU-03012,PDK1 (PDPK1),Metabolism,GDSC
+Shikonin,NOT DEFINED,Other,GDSC
+AKT inhibitor VIII,AKT1,PI3K/MTOR signaling,GDSC
+Embelin,XIAP,Apoptosis regulation,GDSC
+FH535,PPARGAMMA,Other,GDSC
+PAC-1,PROCASPASE-3,Apoptosis regulation,GDSC
+IPA-3,PAK1,Cytoskeleton,GDSC
+GSK650394,SGK2,"Other, kinases",GDSC
+BAY-61-3606,SYK,"Other, kinases",GDSC
+5-Fluorouracil,ANTIMETABOLITE (DNA & RNA),Other,GDSC
+Thapsigargin,SERCA,Other,GDSC
+Obatoclax Mesylate,BCL2,Apoptosis regulation,GDSC
+BMS-754807,IGF1R,RTK signaling,GDSC
+Linsitinib,IGF1R,IGF1R signaling,GDSC
+Bexarotene,RETINIOIC X RECEPTOR (RXR) AGONIST,Other,GDSC
+Bleomycin,DSDNA BREAK INDUCTION,DNA replication,GDSC
+LFM-A13,BTK,"Other, kinases",GDSC
+GW-2580,CSF1R,RTK signaling,GDSC
+Luminespib,HSP90AA1,Protein stability and degradation,GDSC
+Phenformin,BIGUANIDE AGENT,Other,GDSC
+Bryostatin 1,PKC,Other,GDSC
+Pazopanib,CSF1R,RTK signaling,GDSC
+Dacinostat,HDAC1,Chromatin histone acetylation,GDSC
+Epothilone B,MICROTUBULE STABILISER,Mitosis,GDSC
+GSK1904529A,IGF1R,RTK signaling,GDSC
+BMS-345541,IKK1,"Other, kinases",GDSC
+Tipifarnib,FARNESYL-TRANSFERASE (FNTA),Other,GDSC
+Avagacestat_repl_205,AMYLOID BETA20,Other,GDSC
+Ruxolitinib,JAK1,"Other, kinases",GDSC
+AS601245,JNK1,JNK and p38 signaling,GDSC
+Ispinesib Mesylate,KSP,Mitosis,GDSC
+TL-2-105,NOT DEFINED,Other,GDSC
+AT-7519,CDK1,Cell cycle,GDSC
+TAK-715,P38ALPHA,JNK and p38 signaling,GDSC
+BX-912,PDK1 (PDPK1),Metabolism,GDSC
+ZSTK474,PI3K (CLASS 1),PI3K/MTOR signaling,GDSC
+AS605240,PI3KGAMMA,PI3K/MTOR signaling,GDSC
+Genentech Cpd 10,AURKA,Mitosis,GDSC
+GSK1070916,AURKA,Mitosis,GDSC
+AKT inhibitor VIII_repl_228,AKT1,PI3K/MTOR signaling,GDSC
+Enzastaurin,PKCB,"Other, kinases",GDSC
+GSK429286A,ROCK1,Cytoskeleton,GDSC
+FMK,RSK,"Other, kinases",GDSC
+QL-XII-47,BTK,"Other, kinases",GDSC
+Idelalisib,PI3KDELTA,PI3K/MTOR signaling,GDSC
+UNC0638_repl_245,G9A AND GLP METHYLTRANSFERASES,Chromatin histone methylation,GDSC
+Cabozantinib,KDR,RTK signaling,GDSC
+WZ3105,SRC,Other,GDSC
+XMD14-99,ALK,"Other, kinases",GDSC
+Quizartinib,FLT3,RTK signaling,GDSC
+CP724714,ERBB2,EGFR signaling,GDSC
+JW-7-24-1,LCK,"Other, kinases",GDSC
+NPK76-II-72-1,PLK3,Cell cycle,GDSC
+STF-62247,AUTOPHAGY INDUCER,Other,GDSC
+NG-25,TAK1,"Other, kinases",GDSC
+TL-1-85,TAK1,"Other, kinases",GDSC
+VX-11e,ERK2,ERK MAPK signaling,GDSC
+FR-180204,ERK1,ERK MAPK signaling,GDSC
+Tubastatin A,HDAC1,Chromatin histone acetylation,GDSC
+Zibotentan,ENDOTHELIN-1 RECEPTOR (EDNRA),Other,GDSC
+Sepantronium bromide,BIRC5,Apoptosis regulation,GDSC
+NSC-207895,MDM4,p53 pathway,GDSC
+VNLG/124,HDAC1,Chromatin histone acetylation,GDSC
+AR-42,HDAC1,Chromatin histone acetylation,GDSC
+CUDC-101,HDAC1-10,Other,GDSC
+Belinostat,HDAC1,Chromatin histone acetylation,GDSC
+I-BET-762,BRD2,Chromatin other,GDSC
+CAY10603,HDAC1,Chromatin histone acetylation,GDSC
+Linifanib,VEGFR1,RTK signaling,GDSC
+BIX02189,MEK5,ERK MAPK signaling,GDSC
+Alectinib,ALK,RTK signaling,GDSC
+Pelitinib,EGFR,EGFR signaling,GDSC
+Omipalisib,PI3K (CLASS 1),PI3K/MTOR signaling,GDSC
+KIN001-236,HDAC6,Chromatin histone acetylation,GDSC
+KIN001-244,PDK1,"Other, kinases",GDSC
+WHI-P97,JAK3,"Other, kinases",GDSC
+KIN001-260,CDC7,DNA replication,GDSC
+KIN001-266,CDC7,DNA replication,GDSC
+Masitinib,KIT,RTK signaling,GDSC
+Amuvatinib,KIT,RTK signaling,GDSC
+MPS-1-IN-1,MPS1,Mitosis,GDSC
+NVP-BHG712,EPHB4,"Other, kinases",GDSC
+OSI-930,KIT,RTK signaling,GDSC
+OSI-027,MTOR,PI3K/MTOR signaling,GDSC
+CX-5461,RNA POLYMERASE 1,Other,GDSC
+PHA-793887,CDK2,Cell cycle,GDSC
+PI-103,PI3KALPHA,"Other, kinases",GDSC
+PIK-93,PK3CG,PI3K/MTOR signaling,GDSC
+SB52334,ALK5,RTK signaling,GDSC
+TPCA-1,IKK2,"Other, kinases",GDSC
+Fedratinib,JAK2,"Other, kinases",GDSC
+WIKI4,TNKS1,WNT signaling,GDSC
+Y-39983,ROCK,Cytoskeleton,GDSC
+YM201636,PIKFYVE,PI3K/MTOR signaling,GDSC
+Tivozanib,VEGFR1,RTK signaling,GDSC
+GSK690693,AKT1,PI3K/MTOR signaling,GDSC
+QL-XI-92,DDR1,Cytoskeleton,GDSC
+XMD13-2,MRCKB,Cytoskeleton,GDSC
+QL-X-138,BTK,"Other, kinases",GDSC
+XMD15-27,CAMK2,"Other, kinases",GDSC
+T0901317,LXR,Other,GDSC
+Selisistat,SIRT1,Chromatin histone acetylation,GDSC
+THZ-2-49,CDK9,Cell cycle,GDSC
+KIN001-270,CDK9,Other,GDSC
+AICA Ribonucleotide,AMPK AGONIST,Metabolism,GDSC
+Camptothecin,TOP1,DNA replication,GDSC
+Vinblastine,MICROTUBULE DESTABILISER,Mitosis,GDSC
+Cisplatin,DNA CROSSLINKER,DNA replication,GDSC
+Cytarabine,ANTIMETABOLITE,Other,GDSC
+Docetaxel,MICROTUBULE STABILISER,Mitosis,GDSC
+Methotrexate,ANTIMETABOLITE,DNA replication,GDSC
+Tretinoin,RETINOIC ACID,Other,GDSC
+Gefitinib,EGFR,EGFR signaling,GDSC
+Navitoclax,BCL2,Apoptosis regulation,GDSC
+Vorinostat,HDAC INHIBITOR CLASS I,Chromatin histone acetylation,GDSC
+Nilotinib,ABL1,ABL signaling,GDSC
+Refametinib_repl_1014,MEK1,ERK MAPK signaling,GDSC
+CI-1040,MEK1,ERK MAPK signaling,GDSC
+Temsirolimus,MTOR,PI3K/MTOR signaling,GDSC
+Olaparib_repl_1017,PARP1,Genome integrity,GDSC
+Veliparib,PARP1,Genome integrity,GDSC
+Bosutinib,SRC,"Other, kinases",GDSC
+Lenalidomide,CRBN,Protein stability and degradation,GDSC
+Axitinib,PDGFRA,RTK signaling,GDSC
+AZD7762,CHEK1,Cell cycle,GDSC
+GW441756,NTRK1,RTK signaling,GDSC
+Lestauritinib,NA,NA,not_found
+SNX-2112,HSP90AA1,Protein stability and degradation,GDSC
+THZ-2-102-1,CDK7,Cell cycle,GDSC
+SB216763,GSK3A,WNT signaling,GDSC
+Erlotinib,EGFR,EGFR signaling,GDSC
+Rapamycin,MTOR,PI3K/MTOR signaling,GDSC
+Sunitinib,PDGFRA,RTK signaling,GDSC
+PHA-665752,MET,RTK signaling,GDSC
+MG-132,PROTEASOME,Protein stability and degradation,GDSC
+Paclitaxel,MICROTUBULE STABILISER,Mitosis,GDSC
+Cyclopamine,SMO,Other,GDSC
+AZ628,BRAF,ERK MAPK signaling,GDSC
+Sorafenib,PDGFRA,RTK signaling,GDSC
+Tozasertib,AURKA,Mitosis,GDSC
+Imatinib,ABL1,"Other, kinases",GDSC
+NVP-TAE684,ALK,RTK signaling,GDSC
+Crizotinib,MET,RTK signaling,GDSC
+Saracatinib,ABL1,"Other, kinases",GDSC
+S-Trityl-L-cysteine,KIF11,Mitosis,GDSC
+Z-LLNle-CHO,GAMMA-SECRETASE,Other,GDSC
+Dasatinib,ABL1,RTK signaling,GDSC
+GNF-2,BCR-ABL,ABL signaling,GDSC
+CGP-60474,CDK1,Cell cycle,GDSC
+CGP-082996,CDK4,Cell cycle,GDSC
+A-770041,LCK,"Other, kinases",GDSC
+WH-4-023,SRC,"Other, kinases",GDSC
+WZ-1-84,BMX,"Other, kinases",GDSC
+BI-2536,PLK1,Cell cycle,GDSC
+BMS-536924_repl_62,IGF1R,IGF1R signaling,GDSC
+BMS-509744,ITK,"Other, kinases",GDSC
+CMK,RSK2,"Other, kinases",GDSC
+Pyrimethamine,DIHYDROFOLATE REDUCTASE (DHFR),Other,GDSC
+JW-7-52-1,MTOR,PI3K/MTOR signaling,GDSC
+A-443654,AKT1,PI3K/MTOR signaling,GDSC
+GW843682X,PLK1,Cell cycle,GDSC
+Entinostat,HDAC1,Chromatin histone acetylation,GDSC
+Parthenolide,HDAC1,Chromatin histone acetylation,GDSC
+GSK319347A,IKK,"Other, kinases",GDSC
+TGX221,PI3KBETA,PI3K/MTOR signaling,GDSC
+Bortezomib,PROTEASOME,Protein stability and degradation,GDSC
+XMD8-85,ERK5,Other,GDSC
+Seliciclib,CDK2,Cell cycle,GDSC
+Salubrinal,EIF2A,Other,GDSC
+Lapatinib,EGFR,RTK signaling,GDSC
+GSK269962A_repl_127,ROCK1,Cytoskeleton,GDSC

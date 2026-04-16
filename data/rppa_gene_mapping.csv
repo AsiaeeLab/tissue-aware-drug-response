@@ -1,0 +1,140 @@
+rppa_feature,base_protein,hgnc_symbol,notes
+14-3-3_beta,14-3-3_beta,YWHAB,14-3-3 protein beta
+14-3-3_zeta,14-3-3_zeta,YWHAZ,14-3-3 protein zeta
+4E-BP1,4E-BP1,EIF4EBP1,Eukaryotic translation initiation factor 4E-binding protein 1
+4E-BP1_pS65,4E-BP1,EIF4EBP1,Phospho 4E-BP1
+4E-BP1_pT37_T46,4E-BP1,EIF4EBP1,Phospho 4E-BP1
+4E-BP1_pT70,4E-BP1,EIF4EBP1,Phospho 4E-BP1
+53BP1,53BP1,TP53BP1,p53-binding protein 1
+ACC_pS79,ACC,ACACA,Acetyl-CoA carboxylase alpha (phospho)
+ADAR1,ADAR1,ADAR,Adenosine deaminase RNA-specific
+Akt,Akt,AKT1,Protein kinase B
+Akt_pS473,Akt,AKT1,Phospho Akt (Ser473)
+Akt_pT308,Akt,AKT1,Phospho Akt (Thr308)
+alpha-Catenin,alpha-Catenin,CTNNA1,Catenin alpha-1
+AMPK_pT172,AMPK,PRKAA1,AMP-activated protein kinase alpha 1 (phospho)
+Annexin 1,Annexin 1,ANXA1,Annexin A1
+Annexin_VII,Annexin_VII,ANXA7,Annexin A7
+AR,AR,AR,Androgen receptor
+ASNS,ASNS,ASNS,Asparagine synthetase
+ATM,ATM,ATM,Ataxia telangiectasia mutated
+B-Raf_pS445,B-Raf,BRAF,B-Raf proto-oncogene (phospho)
+Bad_pS112,Bad,BAD,BCL2 associated agonist of cell death (phospho)
+Bap1 c-4,Bap1,BAP1,BRCA1-associated protein 1
+Bax,Bax,BAX,BCL2 associated X
+Bcl-2,Bcl-2,BCL2,B-cell lymphoma 2
+Bcl-xL,Bcl-xL,BCL2L1,BCL2-like 1 (Bcl-xL)
+beta-Catenin,beta-Catenin,CTNNB1,Catenin beta-1
+beta-Catenin_pT41_S45,beta-Catenin,CTNNB1,Catenin beta-1 (phospho)
+Bim(CST2933),Bim,BCL2L11,BCL2-like 11 (Bim) CST clone
+Bim(EP1036),Bim,BCL2L11,BCL2-like 11 (Bim) EP clone
+c-Jun_pS73,c-Jun,JUN,Jun proto-oncogene (phospho)
+c-Kit,c-Kit,KIT,KIT proto-oncogene
+c-Met_pY1235,c-Met,MET,MET proto-oncogene (phospho)
+C-Raf(MP05-739),C-Raf,RAF1,Raf-1 proto-oncogene (MP05-739 clone)
+C-Raf_pS338,C-Raf,RAF1,Raf-1 proto-oncogene (phospho)
+Caveolin-1,Caveolin-1,CAV1,Caveolin-1
+CD31,CD31,PECAM1,Platelet endothelial cell adhesion molecule
+CD49b,CD49b,ITGA2,Integrin alpha-2
+CDK1,CDK1,CDK1,Cyclin-dependent kinase 1
+Chk2,Chk2,CHEK2,Checkpoint kinase 2
+Claudin-7,Claudin-7,CLDN7,Claudin-7
+Collagen_VI,Collagen_VI,COL6A1,Collagen type VI alpha 1
+Cyclin_B1,Cyclin_B1,CCNB1,Cyclin B1
+Cyclin_D1,Cyclin_D1,CCND1,Cyclin D1
+Cyclin_E1,Cyclin_E1,CCNE1,Cyclin E1
+DJ-1,DJ-1,PARK7,Parkinsonism-associated deglycase
+Dvl3,Dvl3,DVL3,Dishevelled segment polarity protein 3
+E-Cadherin,E-Cadherin,CDH1,E-Cadherin
+eEF2K,eEF2K,EEF2K,Eukaryotic elongation factor 2 kinase
+EGFR,EGFR,EGFR,Epidermal growth factor receptor
+EGFR_pY1173,EGFR,EGFR,EGFR phospho Tyr1173
+eIF4E,eIF4E,EIF4E,Eukaryotic translation initiation factor 4E
+ER-alpha,ER-alpha,ESR1,Estrogen receptor alpha
+ER-alpha_pS118,ER-alpha,ESR1,Estrogen receptor alpha (phospho)
+ETS-1,ETS-1,ETS1,ETS proto-oncogene 1
+FASN,FASN,FASN,Fatty acid synthase
+Fibronectin,Fibronectin,FN1,Fibronectin 1
+FoxM1,FoxM1,FOXM1,Forkhead box M1
+G6PD,G6PD,G6PD,Glucose-6-phosphate dehydrogenase
+Gab2,Gab2,GAB2,GRB2-associated binding protein 2
+GATA3,GATA3,GATA3,GATA binding protein 3
+GSK3-alpha-beta,GSK3,GSK3B,Glycogen synthase kinase 3 (pan alpha/beta antibody)
+GSK3-alpha-beta_pS21_S9,GSK3,GSK3B,GSK3 phospho (pan alpha/beta)
+GSK3_pS9,GSK3,GSK3B,GSK3 beta phospho Ser9
+HER2,HER2,ERBB2,Human epidermal growth factor receptor 2
+HER3,HER3,ERBB3,Human epidermal growth factor receptor 3
+Heregulin,Heregulin,NRG1,Neuregulin 1
+IGFBP2,IGFBP2,IGFBP2,Insulin-like growth factor binding protein 2
+INPP4B,INPP4B,INPP4B,Inositol polyphosphate 4-phosphatase type II
+IRS1,IRS1,IRS1,Insulin receptor substrate 1
+JAK2,JAK2,JAK2,Janus kinase 2
+JNK_pT183_Y185,JNK,MAPK8,JNK1 (MAPK8) phospho
+Lck,Lck,LCK,LCK proto-oncogene
+MAPK_pT202_Y204,MAPK,MAPK1,ERK1/2 phospho (pT202/Y204)
+MDM2_pS166,MDM2,MDM2,MDM2 proto-oncogene (phospho)
+MEK1,MEK1,MAP2K1,MAPK/ERK kinase 1
+MEK1_pS217_S221,MEK1,MAP2K1,MEK1 phospho
+MIG-6,MIG-6,ERRFI1,ERBB receptor feedback inhibitor 1
+MSH2,MSH2,MSH2,MutS homolog 2
+mTOR,mTOR,MTOR,Mechanistic target of rapamycin
+MYH11,MYH11,MYH11,Myosin heavy chain 11
+Myosin IIa pS1943,Myosin IIa,MYH9,Myosin heavy chain 9 (phospho)
+N-Cadherin,N-Cadherin,CDH2,N-Cadherin
+N-Ras,N-Ras,NRAS,NRAS proto-oncogene
+NDRG1_pT346,NDRG1,NDRG1,N-Myc downstream regulated 1 (phospho)
+Notch1,Notch1,NOTCH1,Notch receptor 1
+p21,p21,CDKN1A,Cyclin dependent kinase inhibitor 1A
+p27,p27,CDKN1B,Cyclin dependent kinase inhibitor 1B
+p27_pT198,p27,CDKN1B,CDKN1B phospho Thr198
+p38 alpha MAPK,p38,MAPK14,p38 alpha MAPK
+p38_MAPK,p38,MAPK14,p38 MAPK (total)
+p38_pT180_Y182,p38,MAPK14,p38 MAPK phospho
+p70S6K,p70S6K,RPS6KB1,Ribosomal protein S6 kinase B1
+p70S6K_pT389,p70S6K,RPS6KB1,p70S6K phospho Thr389
+PAI-1,PAI-1,SERPINE1,Plasminogen activator inhibitor-1
+PDK1,PDK1,PDPK1,3-phosphoinositide dependent protein kinase 1
+PDK1_pS241,PDK1,PDPK1,PDPK1 phospho Ser241
+PEA15,PEA15,PEA15,Phosphoprotein enriched in astrocytes 15
+PEA15_pS116,PEA15,PEA15,PEA15 phospho Ser116
+PI3K-p85,PI3K-p85,PIK3R1,PI3K regulatory subunit p85
+PKC-alpha,PKC-alpha,PRKCA,Protein kinase C alpha
+PKC-delta_pS664,PKC-delta,PRKCD,Protein kinase C delta (phospho)
+PKC-pan_BetaII_pS660,PKC-BetaII,PRKCB,Protein kinase C beta II (phospho)
+Porin,Porin,VDAC1,Voltage-dependent anion channel 1
+PR,PR,PGR,Progesterone receptor
+PRAS40_pT246,PRAS40,AKT1S1,AKT1 substrate 1 (phospho)
+PRDX1,PRDX1,PRDX1,Peroxiredoxin 1
+PREX1,PREX1,PREX1,Phosphatidylinositol-3 4 5-trisphosphate dependent Rac exchange factor 1
+PTEN,PTEN,PTEN,Phosphatase and tensin homolog
+Rab25,Rab25,RAB25,RAB25 member RAS oncogene family
+Rad50,Rad50,RAD50,RAD50 double strand break repair protein
+RAD51,RAD51,RAD51,RAD51 recombinase
+Raptor,Raptor,RPTOR,Regulatory associated protein of MTOR
+Rb_pS807_S811,Rb,RB1,Retinoblastoma protein (phospho)
+RBM15,RBM15,RBM15,RNA binding motif protein 15
+Rictor_pT1135,Rictor,RICTOR,RPTOR independent companion of MTOR (phospho)
+S6_pS235_S236,S6,RPS6,Ribosomal protein S6 (phospho Ser235/236)
+S6_pS240_S244,S6,RPS6,Ribosomal protein S6 (phospho Ser240/244)
+SCD1,SCD1,SCD,Stearoyl-CoA desaturase 1
+SF2,SF2,SRSF1,Serine and arginine rich splicing factor 1
+Shc_pY317,Shc,SHC1,SHC adaptor protein 1 (phospho)
+Smad1,Smad1,SMAD1,SMAD family member 1
+Smad3,Smad3,SMAD3,SMAD family member 3
+Smad4,Smad4,SMAD4,SMAD family member 4
+Src,Src,SRC,SRC proto-oncogene
+Src_pY527,Src,SRC,SRC phospho Tyr527
+STAT3_pY705,STAT3,STAT3,Signal transducer and activator of transcription 3 (phospho)
+STAT5-alpha,STAT5-alpha,STAT5A,Signal transducer and activator of transcription 5A
+Stathmin,Stathmin,STMN1,Stathmin 1
+Syk,Syk,SYK,Spleen associated tyrosine kinase
+TAZ,TAZ,WWTR1,WW domain containing transcription regulator 1 (Hippo pathway)
+TFRC,TFRC,TFRC,Transferrin receptor
+TIGAR,TIGAR,TIGAR,TP53 induced glycolysis regulatory phosphatase
+Transglutaminase,Transglutaminase,TGM2,Transglutaminase 2
+TTF1,TTF1,NKX2-1,Thyroid transcription factor 1
+Tuberin,Tuberin,TSC2,TSC complex subunit 2
+Tuberin_pT1462,Tuberin,TSC2,TSC2 phospho Thr1462
+VEGFR2,VEGFR2,KDR,Vascular endothelial growth factor receptor 2
+YB-1,YB-1,YBX1,Y-box binding protein 1
+YB-1_pS102,YB-1,YBX1,YBX1 phospho Ser102

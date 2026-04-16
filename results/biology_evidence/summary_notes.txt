@@ -1,0 +1,8 @@
+Stable selection threshold: > 100/200 bootstrap resamples
+DSEN shared gene-block rows: 2296
+DSEN tissue gene-block rows: 7408
+EN gene-block rows: 6037
+Median expression tau: shared 0.136, tissue 0.147, EN 0.139
+Median top/median tissue expression ratio: shared 1.146, tissue 1.149, EN 1.145
+Shared vs tissue Wilcoxon p (tau): 0.0397
+Shared vs tissue Wilcoxon p (top/median ratio): 0.226

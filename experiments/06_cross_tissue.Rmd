@@ -1,0 +1,314 @@
+---
+title: "Cross-Tissue Prediction Analysis"
+author: "Amir Asiaee"
+date: "`r Sys.Date()`"
+output:
+  html_document:
+    theme: flatly
+    highlight: tango
+    toc: true
+    toc_float: true
+    number_sections: true
+    code_folding: show
+    df_print: paged
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(
+  echo = TRUE,
+  warning = FALSE,
+  message = FALSE,
+  fig.width = 10,
+  fig.height = 6
+)
+```
+
+# Executive Summary
+
+## Background
+
+This analysis tests whether drug response models trained on one tissue type can
+generalize to predict response in other tissues. This is a critical question for:
+
+1. **Clinical translation**: Can we use models trained on available data to predict
+   response in rare cancer types?
+
+2. **Biological insight**: Are drug response mechanisms tissue-specific or universal?
+
+3. **Data leakage detection**: Cross-tissue prediction provides an independent test
+   that's robust to within-tissue data leakage.
+
+# Setup
+
+```{r load-packages}
+library(here)
+library(tidyverse)
+library(glmnet)
+```
+
+```{r load-methods}
+source(here("methods", "00_paths.R"))
+source(here("methods", "01_data_utils.R"))
+source(here("methods", "02_cv_utils.R"))
+source(here("methods", "04_plot_utils.R"))
+```
+
+# Configuration
+
+```{r config}
+MIN_SAMPLES_PER_TISSUE <- 20
+GLOBAL_SEED <- 42
+
+results_dir <- file.path(paths$results, "cross_tissue")
+if (!dir.exists(results_dir)) dir.create(results_dir, recursive = TRUE)
+```
+
+# Load Data
+
+```{r load-data}
+data <- load_main_data("Sanger")
+print_data_summary(data)
+```
+
+# Tissue Distribution
+
+```{r tissue-dist}
+tissue_counts <- table(data$response$tissue)
+tissue_counts <- sort(tissue_counts, decreasing = TRUE)
+
+# Filter to tissues with enough samples
+large_tissues <- names(tissue_counts)[tissue_counts >= MIN_SAMPLES_PER_TISSUE]
+
+cat(sprintf("Tissues with >= %d samples: %d\n", MIN_SAMPLES_PER_TISSUE, length(large_tissues)))
+print(tissue_counts[large_tissues])
+```
+
+# Load Precomputed Results
+
+```{r load-precomputed-results}
+results_file <- file.path(paths$scratch, "cross_tissue_results.Rda")
+
+if (!file.exists(results_file)) {
+  stop(
+    "Pre-computed results not found.\n",
+    "Run: Rscript methods/run_cross_tissue.R\n",
+    "Or:  TEST_MODE=TRUE Rscript methods/run_cross_tissue.R"
+  )
+}
+
+load(results_file)
+
+if (!exists("cross_tissue_results")) {
+  stop("Expected object 'cross_tissue_results' in results file.")
+}
+
+cross_results_df <- cross_tissue_results %>% filter(status == "success")
+
+cat("Loaded pre-computed cross-tissue results\n")
+cat("  Rows:", nrow(cross_results_df), "\n")
+cat("  Drugs:", length(unique(cross_results_df$drug)), "\n\n")
+```
+
+# Cross-Tissue Prediction Function
+
+```{r cross-tissue-function}
+#' Perform cross-tissue prediction
+#'
+#' @param data Data from load_main_data()
+#' @param drug Drug name
+#' @param train_tissue Tissue to train on
+#' @param test_tissues Tissues to test on (vector)
+#' @param alpha Elastic net alpha
+#' @return Data frame with results
+cross_tissue_predict <- function(data, drug, train_tissue, test_tissues,
+                                  alpha = 0.5, cor_thresh = 0.1) {
+
+  # Prepare full drug data
+  drug_data <- prepare_drug_data(data, drug, min_samples = 10)
+  if (is.null(drug_data)) return(NULL)
+
+  # Split by tissue
+  train_idx <- drug_data$tissue == train_tissue
+  if (sum(train_idx) < 20) return(NULL)
+
+  x_train <- drug_data$x[train_idx, ]
+  y_train <- drug_data$y[train_idx]
+
+  # Preprocess training data (feature selection + scaling)
+  preproc <- preprocess_features(x_train, y_train,
+                                  cor_thresh = cor_thresh,
+                                  scale_features = TRUE)
+  x_train_proc <- preproc$x
+
+  if (ncol(x_train_proc) < 5) return(NULL)
+
+  # Fit model on training tissue
+  cv_fit <- cv.glmnet(x_train_proc, y_train, alpha = alpha, nfolds = 5)
+
+  # Results storage
+  results <- list()
+
+  for (test_tissue in test_tissues) {
+    test_idx <- drug_data$tissue == test_tissue
+    if (sum(test_idx) < 5) next
+
+    x_test <- drug_data$x[test_idx, ]
+    y_test <- drug_data$y[test_idx]
+
+    # Apply same preprocessing
+    x_test_proc <- apply_preprocessing(x_test, preproc)
+
+    # Ensure same features
+    common_features <- intersect(colnames(x_train_proc), colnames(x_test_proc))
+    if (length(common_features) < 5) next
+
+    # Predict
+    y_pred <- predict(cv_fit, newx = x_test_proc[, common_features],
+                      s = "lambda.min")
+
+    # Calculate metrics
+    mse <- mean((y_test - y_pred)^2)
+    cor_val <- cor(y_test, y_pred)
+    r2 <- 1 - mse / var(y_test)
+
+    results[[test_tissue]] <- tibble(
+      drug = drug,
+      train_tissue = train_tissue,
+      test_tissue = test_tissue,
+      n_train = sum(train_idx),
+      n_test = sum(test_idx),
+      mse = mse,
+      correlation = cor_val,
+      r2 = r2
+    )
+  }
+
+  bind_rows(results)
+}
+```
+
+# Example: Cross-Tissue for One Drug
+
+```{r example-drug}
+# Pick a drug with good sample size across tissues
+example_drug <- "Erlotinib"
+
+# Pick a well-represented tissue for training
+train_tissue <- "lung_NSCLC"
+test_tissues <- setdiff(large_tissues, train_tissue)
+
+cat(sprintf("Drug: %s\n", example_drug))
+cat(sprintf("Training tissue: %s\n", train_tissue))
+cat(sprintf("Test tissues: %s\n", paste(test_tissues, collapse = ", ")))
+
+# Run cross-tissue prediction
+example_results <- cross_results_df %>%
+  filter(drug == example_drug, strategy == "cross") %>%
+  arrange(desc(r2))
+
+if (nrow(example_results) > 0) {
+  knitr::kable(example_results, digits = 3,
+               caption = sprintf("Cross-Tissue Prediction: %s (train all other tissues)",
+                                 example_drug))
+}
+```
+
+# Within-Tissue vs Cross-Tissue Performance
+
+```{r within-vs-cross}
+# Compare within-tissue CV to cross-tissue prediction (precomputed)
+within_row <- cross_results_df %>%
+  filter(drug == example_drug, strategy == "within", train_tissue == train_tissue)
+
+cross_row <- cross_results_df %>%
+  filter(drug == example_drug, strategy == "cross", test_tissue == train_tissue)
+
+reverse_row <- cross_results_df %>%
+  filter(drug == example_drug, strategy == "reverse", train_tissue == train_tissue)
+
+if (nrow(within_row) > 0) {
+  cat(sprintf("Within-tissue CV MSE (%s): %.4f\n",
+              train_tissue, within_row$mse[1]))
+}
+
+if (nrow(cross_row) > 0) {
+  cat(sprintf("Cross-tissue MSE (train all other -> test %s): %.4f\n",
+              train_tissue, cross_row$mse[1]))
+}
+
+if (nrow(reverse_row) > 0) {
+  cat(sprintf("Reverse MSE (train %s -> test all other): %.4f\n",
+              train_tissue, reverse_row$mse[1]))
+}
+```
+
+# Full Cross-Tissue Analysis
+
+```{r full-analysis}
+# Results are loaded from precomputed scratch output.
+```
+
+# Visualize Cross-Tissue Performance
+
+```{r visualize-cross, fig.height=7}
+if (nrow(cross_results_df) > 0) {
+  ggplot(cross_results_df, aes(x = test_tissue, y = r2, fill = strategy)) +
+    geom_boxplot(alpha = 0.7) +
+    geom_hline(yintercept = 0, linetype = "dashed", color = "red") +
+    facet_wrap(~ strategy, scales = "free_x") +
+    labs(
+      title = "Cross-Tissue Prediction Performance",
+      subtitle = "R2 by test tissue, faceted by evaluation strategy",
+      x = "Test Tissue",
+      y = "R2"
+    ) +
+    theme_minimal(base_size = 12) +
+    theme(axis.text.x = element_text(angle = 45, hjust = 1))
+}
+```
+
+## Summary by Drug
+
+```{r summary-drug}
+if (nrow(cross_results_df) > 0) {
+  drug_summary <- cross_results_df %>%
+    group_by(drug, strategy) %>%
+    summarize(
+      N_experiments = n(),
+      Mean_R2 = mean(r2, na.rm = TRUE),
+      Median_R2 = median(r2, na.rm = TRUE),
+      Pct_positive_R2 = 100 * mean(r2 > 0, na.rm = TRUE)
+    ) %>%
+    arrange(desc(Mean_R2))
+
+  knitr::kable(drug_summary, digits = 3,
+               caption = "Cross-Tissue Performance by Drug")
+}
+```
+
+# Save Results
+
+```{r save-results}
+if (nrow(cross_results_df) > 0) {
+  write_csv(cross_results_df, file.path(results_dir, "cross_tissue_results.csv"))
+  cat(sprintf("Results saved to: %s\n", results_dir))
+}
+```
+
+# Conclusions
+
+1. **Cross-tissue generalization varies**: Some drugs show reasonable cross-tissue
+   prediction (positive R²) while others fail completely.
+
+2. **Implications for clinical translation**: Models should be validated across
+   tissue types before being applied to new cancer types.
+
+3. **Tissue-specific effects**: Poor cross-tissue generalization suggests that
+   drug response mechanisms may be tissue-dependent, supporting the use of
+   tissue-aware models like DSEN.
+
+# Session Info
+
+```{r session-info}
+sessionInfo()
+```

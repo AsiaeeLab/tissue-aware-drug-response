@@ -1,0 +1,468 @@
+drug_name,target_gene,target_type,target_pathway,source,gdsc_name
+Tanespimycin,HSP90AA1,primary,Protein stability and degradation,GDSC,Tanespimycin
+VX-702,P38,primary,JNK and p38 signaling,GDSC,VX-702
+Motesanib,KDR,primary,RTK signaling,GDSC,Motesanib
+Motesanib,RET,secondary,RTK signaling,GDSC,Motesanib
+Motesanib,KIT,secondary,RTK signaling,GDSC,Motesanib
+Motesanib,PDGFRA,secondary,RTK signaling,GDSC,Motesanib
+KU-55933,ATM,primary,Genome integrity,GDSC,KU-55933
+Elesclomol,HSP90AA1,primary,Protein stability and degradation,GDSC,Elesclomol
+Afatinib,EGFR,primary,EGFR signaling,GDSC,Afatinib
+Afatinib,ERBB2,secondary,EGFR signaling,GDSC,Afatinib
+Vismodegib,SMO,primary,Other,GDSC,Vismodegib
+PLX-4720,BRAF,primary,ERK MAPK signaling,GDSC,PLX-4720
+BX796,NA,NA,NA,not_found,NA
+NU7441,DNAPK,primary,Genome integrity,GDSC,NU7441
+SL0101,RSK,primary,"Other, kinases",GDSC,SL0101
+SL0101,AURKB,secondary,"Other, kinases",GDSC,SL0101
+SL0101,PIM1,secondary,"Other, kinases",GDSC,SL0101
+SL0101,PIM3,secondary,"Other, kinases",GDSC,SL0101
+Doramapimod,P38,primary,JNK and p38 signaling,GDSC,Doramapimod
+Doramapimod,JNK2,secondary,JNK and p38 signaling,GDSC,Doramapimod
+JNK Inhibitor VIII,JNK,primary,JNK and p38 signaling,GDSC,JNK Inhibitor VIII
+681640,WEE1,primary,Cell cycle,GDSC,Wee1 Inhibitor
+681640,CHEK1,secondary,Cell cycle,GDSC,Wee1 Inhibitor
+Nutlin-3a (-),MDM2,primary,p53 pathway,GDSC,Nutlin-3a (-)
+PD173074,FGFR1,primary,RTK signaling,GDSC,PD173074
+PD173074,FGFR2,secondary,RTK signaling,GDSC,PD173074
+PD173074,FGFR3,secondary,RTK signaling,GDSC,PD173074
+ZM447439,AURKA,primary,Mitosis,GDSC,ZM447439
+ZM447439,AURKB,secondary,Mitosis,GDSC,ZM447439
+RO-3306,CDK1,primary,Cell cycle,GDSC,RO-3306
+MK-2206,AKT1,primary,PI3K/MTOR signaling,GDSC,MK-2206
+MK-2206,AKT2,secondary,PI3K/MTOR signaling,GDSC,MK-2206
+Palbociclib,CDK4,primary,Cell cycle,GDSC,Palbociclib
+Palbociclib,CDK6,secondary,Cell cycle,GDSC,Palbociclib
+Dactolisib,PI3K (CLASS 1),primary,PI3K/MTOR signaling,GDSC,Dactolisib
+Dactolisib,MTOR,secondary,PI3K/MTOR signaling,GDSC,Dactolisib
+Dactolisib,MTOR,secondary,PI3K/MTOR signaling,GDSC,Dactolisib
+Pictilisib,PI3K (CLASS 1),primary,PI3K/MTOR signaling,GDSC,Pictilisib
+AZD8055,MTOR,primary,PI3K/MTOR signaling,GDSC,AZD8055
+AZD8055,MTOR,secondary,PI3K/MTOR signaling,GDSC,AZD8055
+PD0325901,MEK1,primary,ERK MAPK signaling,GDSC,PD0325901
+PD0325901,MEK2,secondary,ERK MAPK signaling,GDSC,PD0325901
+SB590885,BRAF,primary,ERK MAPK signaling,GDSC,SB590885
+Selumetinib,MEK1,primary,ERK MAPK signaling,GDSC,Selumetinib
+Selumetinib,MEK2,secondary,ERK MAPK signaling,GDSC,Selumetinib
+AZD6482,PI3KBETA,primary,PI3K/MTOR signaling,GDSC,AZD6482
+CCT007093,PPM1D,primary,Cell cycle,GDSC,CCT007093
+EHT-1864,RAC1,primary,Cytoskeleton,GDSC,EHT-1864
+EHT-1864,RAC2,secondary,Cytoskeleton,GDSC,EHT-1864
+EHT-1864,RAC3,secondary,Cytoskeleton,GDSC,EHT-1864
+Avagacestat,AMYLOID BETA20,primary,Other,GDSC,Avagacestat
+Avagacestat,AMYLOID BETA40,secondary,Other,GDSC,Avagacestat
+BMS-536924,IGF1R,primary,IGF1R signaling,GDSC,BMS-536924
+BMS-536924,IR,secondary,IGF1R signaling,GDSC,BMS-536924
+Cetuximab,EGFR,primary,EGFR signaling,GDSC,Cetuximab
+PF-4708671,S6K1,primary,PI3K/MTOR signaling,GDSC,PF-4708671
+Serdemetan,MDM2,primary,p53 pathway,GDSC,Serdemetan
+HG-5-113-01,AURKA,primary,Mitosis,GDSC,HG-5-113-01
+HG-5-88-01,TAK1,primary,"Other, kinases",GDSC,HG-5-88-01
+HG-5-88-01,M4K2,secondary,"Other, kinases",GDSC,HG-5-88-01
+TW 37,BCL2,primary,Apoptosis regulation,GDSC,TW 37
+TW 37,BCL-XL,secondary,Apoptosis regulation,GDSC,TW 37
+TW 37,MCL1,secondary,Apoptosis regulation,GDSC,TW 37
+XMD11-85h,LRRK2,primary,"Other, kinases",GDSC,XMD11-85h
+XMD11-85h,ERK5,secondary,"Other, kinases",GDSC,XMD11-85h
+ZG-10,JNK1,primary,JNK and p38 signaling,GDSC,ZG-10
+XMD8-92,ERK5,primary,ERK MAPK signaling,GDSC,XMD8-92
+QL-VIII-58,MTOR,primary,Other,GDSC,QL-VIII-58
+QL-VIII-58,ATR,secondary,Other,GDSC,QL-VIII-58
+CCT-018159,HSP90AA1,primary,Protein stability and degradation,GDSC,CCT-018159
+Rucaparib,PARP1,primary,Genome integrity,GDSC,Rucaparib
+Rucaparib,PARP2,secondary,Genome integrity,GDSC,Rucaparib
+GSK269962A,ROCK1,primary,Cytoskeleton,GDSC,GSK269962A
+GSK269962A,ROCK2,secondary,Cytoskeleton,GDSC,GSK269962A
+SB-505124,NA,NA,NA,not_found,NA
+Tamoxifen,ESR1,primary,Hormone-related,GDSC,Tamoxifen
+QL-XII-61,BMX,primary,"Other, kinases",GDSC,QL-XII-61
+QL-XII-61,BTK,secondary,"Other, kinases",GDSC,QL-XII-61
+JQ1,BRD2,primary,Chromatin other,GDSC,JQ1
+JQ1,BRD3,secondary,Chromatin other,GDSC,JQ1
+JQ1,BRD4,secondary,Chromatin other,GDSC,JQ1
+JQ1,BRDT,secondary,Chromatin other,GDSC,JQ1
+PFI-1,BRD4,primary,Chromatin other,GDSC,PFI-1
+IOX2,EGLN1,primary,Other,GDSC,IOX2
+UNC0638,G9A AND GLP METHYLTRANSFERASES,primary,Chromatin histone methylation,GDSC,UNC0638
+YK-4-279,RNA HELICASE A,primary,Other,GDSC,YK-4-279
+CHIR-99021,GSK3A,primary,WNT signaling,GDSC,CHIR-99021
+CHIR-99021,GSK3B,secondary,WNT signaling,GDSC,CHIR-99021
+(5Z)-7-Oxozeaenol,TAK1,primary,"Other, kinases",GDSC,(5Z)-7-Oxozeaenol
+Piperlongumine,INDUCES REACTIVE OXYGEN SPECIES,primary,Other,GDSC,Piperlongumine
+Daporinad,"NAMPT",primary,Metabolism,GDSC,Daporinad
+Talazoparib,PARP1,primary,Genome integrity,GDSC,Talazoparib
+Talazoparib,PARP2,secondary,Genome integrity,GDSC,Talazoparib
+rTRAIL,TRAIL RECEPTOR AGONIST,primary,Apoptosis regulation,GDSC,rTRAIL
+UNC1215,L3MBTL3,primary,Chromatin other,GDSC,UNC1215
+SGC0946,DOT1L,primary,Chromatin histone methylation,GDSC,SGC0946
+XAV939,TNKS1,primary,WNT signaling,GDSC,XAV939
+XAV939,TNKS2,secondary,WNT signaling,GDSC,XAV939
+PLX-4720_repl_1371,BRAF,primary,ERK MAPK signaling,GDSC,PLX-4720
+Trametinib,MEK1,primary,ERK MAPK signaling,GDSC,Trametinib
+Trametinib,MEK2,secondary,ERK MAPK signaling,GDSC,Trametinib
+Dabrafenib,BRAF,primary,ERK MAPK signaling,GDSC,Dabrafenib
+Temozolomide,DNA ALKYLATING AGENT,primary,DNA replication,GDSC,Temozolomide
+Afatinib_repl_1377,EGFR,primary,EGFR signaling,GDSC,Afatinib
+Afatinib_repl_1377,ERBB2,secondary,EGFR signaling,GDSC,Afatinib
+Bleomycin (50 uM),DSDNA BREAK INDUCTION,primary,DNA replication,GDSC,Bleomycin (50 uM)
+SN-38,TOP1,primary,DNA replication,GDSC,SN-38
+Olaparib,PARP1,primary,Genome integrity,GDSC,Olaparib
+Olaparib,PARP2,secondary,Genome integrity,GDSC,Olaparib
+Selumetinib_repl_1498,MEK1,primary,ERK MAPK signaling,GDSC,Selumetinib
+Selumetinib_repl_1498,MEK2,secondary,ERK MAPK signaling,GDSC,Selumetinib
+Bicalutamide,AR,primary,Hormone-related,GDSC,Bicalutamide
+Refametinib,MEK1,primary,ERK MAPK signaling,GDSC,Refametinib
+Refametinib,MEK2,secondary,ERK MAPK signaling,GDSC,Refametinib
+Pictilisib_repl_1527,PI3K (CLASS 1),primary,PI3K/MTOR signaling,GDSC,Pictilisib
+Pevonedistat,"NAE",primary,Other,GDSC,Pevonedistat
+Doxorubicin,ANTHRACYCLINE,primary,DNA replication,GDSC,Doxorubicin
+Etoposide,TOP2,primary,DNA replication,GDSC,Etoposide
+Gemcitabine,PYRIMIDINE ANTIMETABOLITE,primary,DNA replication,GDSC,Gemcitabine
+Mitomycin-C,DNA CROSSLINKER,primary,DNA replication,GDSC,Mitomycin-C
+Vinorelbine,MICROTUBULE DESTABILISER,primary,Mitosis,GDSC,Vinorelbine
+NSC-87877,SHP-1 (PTPN6),primary,Other,GDSC,NSC-87877
+NSC-87877,SHP-2 (PTPN11),secondary,Other,GDSC,NSC-87877
+Bicalutamide_repl_150,AR,primary,Hormone-related,GDSC,Bicalutamide
+QS11,ARFGAP1,primary,Other,GDSC,QS11
+CP466722,ATM,primary,Genome integrity,GDSC,CP466722
+Midostaurin,PKC,primary,Other,GDSC,Midostaurin
+Midostaurin,PPK,secondary,Other,GDSC,Midostaurin
+Midostaurin,FLT1,secondary,Other,GDSC,Midostaurin
+Midostaurin,C-FGR,secondary,Other,GDSC,Midostaurin
+Midostaurin,OTHERS,secondary,Other,GDSC,Midostaurin
+CHIR-99021_repl_154,GSK3A,primary,WNT signaling,GDSC,CHIR-99021
+CHIR-99021_repl_154,GSK3B,secondary,WNT signaling,GDSC,CHIR-99021
+Ponatinib,ABL1,primary,"Other, kinases",GDSC,Ponatinib
+Ponatinib,PDGFRA,secondary,"Other, kinases",GDSC,Ponatinib
+Ponatinib,VEGFR2,secondary,"Other, kinases",GDSC,Ponatinib
+Ponatinib,FGFR1,secondary,"Other, kinases",GDSC,Ponatinib
+Ponatinib,SRC,secondary,"Other, kinases",GDSC,Ponatinib
+Ponatinib,TIE2,secondary,"Other, kinases",GDSC,Ponatinib
+Ponatinib,FLT3,secondary,"Other, kinases",GDSC,Ponatinib
+AZD6482_repl_156,PI3KBETA,primary,PI3K/MTOR signaling,GDSC,AZD6482
+JNK-9L,JNK2,primary,JNK and p38 signaling,GDSC,JNK-9L
+JNK-9L,JNK3,secondary,JNK and p38 signaling,GDSC,JNK-9L
+PF-562271,FAK,primary,Cytoskeleton,GDSC,PF-562271
+PF-562271,FAK2,secondary,Cytoskeleton,GDSC,PF-562271
+HG6-64-1,BRAF,primary,ERK MAPK signaling,GDSC,HG6-64-1
+JQ1_repl_163,BRD2,primary,Chromatin other,GDSC,JQ1
+JQ1_repl_163,BRD3,secondary,Chromatin other,GDSC,JQ1
+JQ1_repl_163,BRD4,secondary,Chromatin other,GDSC,JQ1
+JQ1_repl_163,BRDT,secondary,Chromatin other,GDSC,JQ1
+JQ12,HDAC1,primary,Chromatin histone acetylation,GDSC,JQ12
+JQ12,HDAC2,secondary,Chromatin histone acetylation,GDSC,JQ12
+DMOG,HIF-PH,primary,Metabolism,GDSC,DMOG
+FTI-277,FARNESYL-TRANSFERASE (FNTA),primary,Other,GDSC,FTI-277
+OSU-03012,PDK1 (PDPK1),primary,Metabolism,GDSC,OSU-03012
+Shikonin,NOT DEFINED,primary,Other,GDSC,Shikonin
+AKT inhibitor VIII,AKT1,primary,PI3K/MTOR signaling,GDSC,AKT inhibitor VIII
+AKT inhibitor VIII,AKT2,secondary,PI3K/MTOR signaling,GDSC,AKT inhibitor VIII
+AKT inhibitor VIII,AKT3,secondary,PI3K/MTOR signaling,GDSC,AKT inhibitor VIII
+Embelin,XIAP,primary,Apoptosis regulation,GDSC,Embelin
+FH535,PPARGAMMA,primary,Other,GDSC,FH535
+FH535,PPARDELTA,secondary,Other,GDSC,FH535
+PAC-1,PROCASPASE-3,primary,Apoptosis regulation,GDSC,PAC-1
+PAC-1,PROCASPASE-7,secondary,Apoptosis regulation,GDSC,PAC-1
+IPA-3,PAK1,primary,Cytoskeleton,GDSC,IPA-3
+GSK650394,SGK2,primary,"Other, kinases",GDSC,GSK650394
+GSK650394,SGK3,secondary,"Other, kinases",GDSC,GSK650394
+BAY-61-3606,SYK,primary,"Other, kinases",GDSC,BAY-61-3606
+5-Fluorouracil,ANTIMETABOLITE (DNA & RNA),primary,Other,GDSC,5-Fluorouracil
+Thapsigargin,SERCA,primary,Other,GDSC,Thapsigargin
+Obatoclax Mesylate,BCL2,primary,Apoptosis regulation,GDSC,Obatoclax Mesylate
+Obatoclax Mesylate,BCL-XL,secondary,Apoptosis regulation,GDSC,Obatoclax Mesylate
+Obatoclax Mesylate,BCL-W,secondary,Apoptosis regulation,GDSC,Obatoclax Mesylate
+Obatoclax Mesylate,MCL1,secondary,Apoptosis regulation,GDSC,Obatoclax Mesylate
+BMS-754807,IGF1R,primary,RTK signaling,GDSC,BMS-754807
+BMS-754807,IR,secondary,RTK signaling,GDSC,BMS-754807
+Linsitinib,IGF1R,primary,IGF1R signaling,GDSC,Linsitinib
+Bexarotene,RETINIOIC X RECEPTOR (RXR) AGONIST,primary,Other,GDSC,Bexarotene
+Bleomycin,DSDNA BREAK INDUCTION,primary,DNA replication,GDSC,Bleomycin
+LFM-A13,BTK,primary,"Other, kinases",GDSC,LFM-A13
+GW-2580,CSF1R,primary,RTK signaling,GDSC,GW-2580
+Luminespib,HSP90AA1,primary,Protein stability and degradation,GDSC,Luminespib
+Phenformin,BIGUANIDE AGENT,primary,Other,GDSC,Phenformin
+Bryostatin 1,PKC,primary,Other,GDSC,Bryostatin 1
+Pazopanib,CSF1R,primary,RTK signaling,GDSC,Pazopanib
+Pazopanib,KIT,secondary,RTK signaling,GDSC,Pazopanib
+Pazopanib,PDGFRA,secondary,RTK signaling,GDSC,Pazopanib
+Pazopanib,PDGFRB,secondary,RTK signaling,GDSC,Pazopanib
+Dacinostat,HDAC1,primary,Chromatin histone acetylation,GDSC,Dacinostat
+Epothilone B,MICROTUBULE STABILISER,primary,Mitosis,GDSC,Epothilone B
+GSK1904529A,IGF1R,primary,RTK signaling,GDSC,GSK1904529A
+GSK1904529A,IR,secondary,RTK signaling,GDSC,GSK1904529A
+BMS-345541,IKK1,primary,"Other, kinases",GDSC,BMS-345541
+BMS-345541,IKK2,secondary,"Other, kinases",GDSC,BMS-345541
+Tipifarnib,FARNESYL-TRANSFERASE (FNTA),primary,Other,GDSC,Tipifarnib
+Avagacestat_repl_205,AMYLOID BETA20,primary,Other,GDSC,Avagacestat
+Avagacestat_repl_205,AMYLOID BETA40,secondary,Other,GDSC,Avagacestat
+Ruxolitinib,JAK1,primary,"Other, kinases",GDSC,Ruxolitinib
+Ruxolitinib,JAK2,secondary,"Other, kinases",GDSC,Ruxolitinib
+AS601245,JNK1,primary,JNK and p38 signaling,GDSC,AS601245
+AS601245,JNK2,secondary,JNK and p38 signaling,GDSC,AS601245
+AS601245,JNK2,secondary,JNK and p38 signaling,GDSC,AS601245
+Ispinesib Mesylate,KSP,primary,Mitosis,GDSC,Ispinesib Mesylate
+TL-2-105,NOT DEFINED,primary,Other,GDSC,TL-2-105
+AT-7519,CDK1,primary,Cell cycle,GDSC,AT-7519
+AT-7519,CDK2,secondary,Cell cycle,GDSC,AT-7519
+AT-7519,CDK4,secondary,Cell cycle,GDSC,AT-7519
+AT-7519,CDK6,secondary,Cell cycle,GDSC,AT-7519
+AT-7519,CDK9,secondary,Cell cycle,GDSC,AT-7519
+TAK-715,P38ALPHA,primary,JNK and p38 signaling,GDSC,TAK-715
+TAK-715,P38BETA,secondary,JNK and p38 signaling,GDSC,TAK-715
+BX-912,PDK1 (PDPK1),primary,Metabolism,GDSC,BX-912
+ZSTK474,PI3K (CLASS 1),primary,PI3K/MTOR signaling,GDSC,ZSTK474
+AS605240,PI3KGAMMA,primary,PI3K/MTOR signaling,GDSC,AS605240
+Genentech Cpd 10,AURKA,primary,Mitosis,GDSC,Genentech Cpd 10
+Genentech Cpd 10,AURKB,secondary,Mitosis,GDSC,Genentech Cpd 10
+GSK1070916,AURKA,primary,Mitosis,GDSC,GSK1070916
+GSK1070916,AURKC,secondary,Mitosis,GDSC,GSK1070916
+AKT inhibitor VIII_repl_228,AKT1,primary,PI3K/MTOR signaling,GDSC,AKT inhibitor VIII
+AKT inhibitor VIII_repl_228,AKT2,secondary,PI3K/MTOR signaling,GDSC,AKT inhibitor VIII
+AKT inhibitor VIII_repl_228,AKT3,secondary,PI3K/MTOR signaling,GDSC,AKT inhibitor VIII
+Enzastaurin,PKCB,primary,"Other, kinases",GDSC,Enzastaurin
+GSK429286A,ROCK1,primary,Cytoskeleton,GDSC,GSK429286A
+GSK429286A,ROCK2,secondary,Cytoskeleton,GDSC,GSK429286A
+FMK,RSK,primary,"Other, kinases",GDSC,FMK
+QL-XII-47,BTK,primary,"Other, kinases",GDSC,QL-XII-47
+QL-XII-47,BMX,secondary,"Other, kinases",GDSC,QL-XII-47
+Idelalisib,PI3KDELTA,primary,PI3K/MTOR signaling,GDSC,Idelalisib
+UNC0638_repl_245,G9A AND GLP METHYLTRANSFERASES,primary,Chromatin histone methylation,GDSC,UNC0638
+Cabozantinib,KDR,primary,RTK signaling,GDSC,Cabozantinib
+Cabozantinib,MET,secondary,RTK signaling,GDSC,Cabozantinib
+Cabozantinib,RET,secondary,RTK signaling,GDSC,Cabozantinib
+Cabozantinib,KIT,secondary,RTK signaling,GDSC,Cabozantinib
+Cabozantinib,FLT1,secondary,RTK signaling,GDSC,Cabozantinib
+Cabozantinib,FLT3,secondary,RTK signaling,GDSC,Cabozantinib
+Cabozantinib,FLT4,secondary,RTK signaling,GDSC,Cabozantinib
+Cabozantinib,TIE2,secondary,RTK signaling,GDSC,Cabozantinib
+Cabozantinib,AXL,secondary,RTK signaling,GDSC,Cabozantinib
+WZ3105,SRC,primary,Other,GDSC,WZ3105
+WZ3105,ROCK2,secondary,Other,GDSC,WZ3105
+WZ3105,NTRK2,secondary,Other,GDSC,WZ3105
+WZ3105,FLT3,secondary,Other,GDSC,WZ3105
+WZ3105,IRAK1,secondary,Other,GDSC,WZ3105
+WZ3105,OTHERS,secondary,Other,GDSC,WZ3105
+XMD14-99,ALK,primary,"Other, kinases",GDSC,XMD14-99
+XMD14-99,CDK7,secondary,"Other, kinases",GDSC,XMD14-99
+XMD14-99,LTK,secondary,"Other, kinases",GDSC,XMD14-99
+XMD14-99,OTHERS,secondary,"Other, kinases",GDSC,XMD14-99
+Quizartinib,FLT3,primary,RTK signaling,GDSC,Quizartinib
+CP724714,ERBB2,primary,EGFR signaling,GDSC,CP724714
+JW-7-24-1,LCK,primary,"Other, kinases",GDSC,JW-7-24-1
+NPK76-II-72-1,PLK3,primary,Cell cycle,GDSC,NPK76-II-72-1
+STF-62247,AUTOPHAGY INDUCER,primary,Other,GDSC,STF-62247
+NG-25,TAK1,primary,"Other, kinases",GDSC,NG-25
+NG-25,M4K2,secondary,"Other, kinases",GDSC,NG-25
+TL-1-85,TAK1,primary,"Other, kinases",GDSC,TL-1-85
+TL-1-85,MAP4K2,secondary,"Other, kinases",GDSC,TL-1-85
+VX-11e,ERK2,primary,ERK MAPK signaling,GDSC,VX-11e
+FR-180204,ERK1,primary,ERK MAPK signaling,GDSC,FR-180204
+FR-180204,ERK2,secondary,ERK MAPK signaling,GDSC,FR-180204
+Tubastatin A,HDAC1,primary,Chromatin histone acetylation,GDSC,Tubastatin A
+Tubastatin A,HDAC6,secondary,Chromatin histone acetylation,GDSC,Tubastatin A
+Tubastatin A,HDAC8,secondary,Chromatin histone acetylation,GDSC,Tubastatin A
+Zibotentan,ENDOTHELIN-1 RECEPTOR (EDNRA),primary,Other,GDSC,Zibotentan
+Sepantronium bromide,BIRC5,primary,Apoptosis regulation,GDSC,Sepantronium bromide
+NSC-207895,MDM4,primary,p53 pathway,GDSC,NSC-207895
+VNLG/124,HDAC1,primary,Chromatin histone acetylation,GDSC,VNLG/124
+VNLG/124,RAR,secondary,Chromatin histone acetylation,GDSC,VNLG/124
+AR-42,HDAC1,primary,Chromatin histone acetylation,GDSC,AR-42
+CUDC-101,HDAC1-10,primary,Other,GDSC,CUDC-101
+CUDC-101,EGFR,secondary,Other,GDSC,CUDC-101
+CUDC-101,ERBB2,secondary,Other,GDSC,CUDC-101
+Belinostat,HDAC1,primary,Chromatin histone acetylation,GDSC,Belinostat
+I-BET-762,BRD2,primary,Chromatin other,GDSC,I-BET-762
+I-BET-762,BRD3,secondary,Chromatin other,GDSC,I-BET-762
+I-BET-762,BRD4,secondary,Chromatin other,GDSC,I-BET-762
+CAY10603,HDAC1,primary,Chromatin histone acetylation,GDSC,CAY10603
+CAY10603,HDAC6,secondary,Chromatin histone acetylation,GDSC,CAY10603
+Linifanib,VEGFR1,primary,RTK signaling,GDSC,Linifanib
+Linifanib,VEGFR2,secondary,RTK signaling,GDSC,Linifanib
+Linifanib,VEGFR3,secondary,RTK signaling,GDSC,Linifanib
+Linifanib,CSF1R,secondary,RTK signaling,GDSC,Linifanib
+Linifanib,FLT3,secondary,RTK signaling,GDSC,Linifanib
+Linifanib,KIT,secondary,RTK signaling,GDSC,Linifanib
+BIX02189,MEK5,primary,ERK MAPK signaling,GDSC,BIX02189
+BIX02189,ERK5,secondary,ERK MAPK signaling,GDSC,BIX02189
+Alectinib,ALK,primary,RTK signaling,GDSC,Alectinib
+Pelitinib,EGFR,primary,EGFR signaling,GDSC,Pelitinib
+Omipalisib,PI3K (CLASS 1),primary,PI3K/MTOR signaling,GDSC,Omipalisib
+Omipalisib,MTOR,secondary,PI3K/MTOR signaling,GDSC,Omipalisib
+Omipalisib,MTOR,secondary,PI3K/MTOR signaling,GDSC,Omipalisib
+KIN001-236,HDAC6,primary,Chromatin histone acetylation,GDSC,KIN001-236
+KIN001-236,HDAC10,secondary,Chromatin histone acetylation,GDSC,KIN001-236
+KIN001-244,PDK1,primary,"Other, kinases",GDSC,KIN001-244
+WHI-P97,JAK3,primary,"Other, kinases",GDSC,WHI-P97
+KIN001-260,CDC7,primary,DNA replication,GDSC,KIN001-260
+KIN001-266,CDC7,primary,DNA replication,GDSC,KIN001-266
+Masitinib,KIT,primary,RTK signaling,GDSC,Masitinib
+Masitinib,PDGFRA,secondary,RTK signaling,GDSC,Masitinib
+Masitinib,PDGFRB,secondary,RTK signaling,GDSC,Masitinib
+Amuvatinib,KIT,primary,RTK signaling,GDSC,Amuvatinib
+Amuvatinib,PDGFRA,secondary,RTK signaling,GDSC,Amuvatinib
+Amuvatinib,FLT3,secondary,RTK signaling,GDSC,Amuvatinib
+MPS-1-IN-1,MPS1,primary,Mitosis,GDSC,MPS-1-IN-1
+NVP-BHG712,EPHB4,primary,"Other, kinases",GDSC,NVP-BHG712
+NVP-BHG712,BRAF,secondary,"Other, kinases",GDSC,NVP-BHG712
+NVP-BHG712,SRC,secondary,"Other, kinases",GDSC,NVP-BHG712
+NVP-BHG712,ABL1,secondary,"Other, kinases",GDSC,NVP-BHG712
+OSI-930,KIT,primary,RTK signaling,GDSC,OSI-930
+OSI-930,VEGFR2,secondary,RTK signaling,GDSC,OSI-930
+OSI-027,MTOR,primary,PI3K/MTOR signaling,GDSC,OSI-027
+OSI-027,MTOR,secondary,PI3K/MTOR signaling,GDSC,OSI-027
+CX-5461,RNA POLYMERASE 1,primary,Other,GDSC,CX-5461
+PHA-793887,CDK2,primary,Cell cycle,GDSC,PHA-793887
+PHA-793887,CDK7,secondary,Cell cycle,GDSC,PHA-793887
+PHA-793887,CDK5,secondary,Cell cycle,GDSC,PHA-793887
+PI-103,PI3KALPHA,primary,"Other, kinases",GDSC,PI-103
+PI-103,DAPK3,secondary,"Other, kinases",GDSC,PI-103
+PI-103,CLK4,secondary,"Other, kinases",GDSC,PI-103
+PI-103,PIM3,secondary,"Other, kinases",GDSC,PI-103
+PI-103,HIPK2,secondary,"Other, kinases",GDSC,PI-103
+PIK-93,PK3CG,primary,PI3K/MTOR signaling,GDSC,PIK-93
+SB52334,ALK5,primary,RTK signaling,GDSC,SB52334
+TPCA-1,IKK2,primary,"Other, kinases",GDSC,TPCA-1
+Fedratinib,JAK2,primary,"Other, kinases",GDSC,Fedratinib
+WIKI4,TNKS1,primary,WNT signaling,GDSC,WIKI4
+WIKI4,TNKS2,secondary,WNT signaling,GDSC,WIKI4
+Y-39983,ROCK,primary,Cytoskeleton,GDSC,Y-39983
+YM201636,PIKFYVE,primary,PI3K/MTOR signaling,GDSC,YM201636
+Tivozanib,VEGFR1,primary,RTK signaling,GDSC,Tivozanib
+Tivozanib,VEGFR2,secondary,RTK signaling,GDSC,Tivozanib
+Tivozanib,VEGFR3,secondary,RTK signaling,GDSC,Tivozanib
+Tivozanib,PDGFRA,secondary,RTK signaling,GDSC,Tivozanib
+Tivozanib,KIT,secondary,RTK signaling,GDSC,Tivozanib
+GSK690693,AKT1,primary,PI3K/MTOR signaling,GDSC,GSK690693
+GSK690693,AKT2,secondary,PI3K/MTOR signaling,GDSC,GSK690693
+GSK690693,AKT3,secondary,PI3K/MTOR signaling,GDSC,GSK690693
+QL-XI-92,DDR1,primary,Cytoskeleton,GDSC,QL-XI-92
+XMD13-2,MRCKB,primary,Cytoskeleton,GDSC,XMD13-2
+QL-X-138,BTK,primary,"Other, kinases",GDSC,QL-X-138
+XMD15-27,CAMK2,primary,"Other, kinases",GDSC,XMD15-27
+T0901317,LXR,primary,Other,GDSC,T0901317
+T0901317,FXR,secondary,Other,GDSC,T0901317
+Selisistat,SIRT1,primary,Chromatin histone acetylation,GDSC,Selisistat
+THZ-2-49,CDK9,primary,Cell cycle,GDSC,THZ-2-49
+KIN001-270,CDK9,primary,Other,GDSC,KIN001-270
+AICA Ribonucleotide,AMPK AGONIST,primary,Metabolism,GDSC,AICA Ribonucleotide
+Camptothecin,TOP1,primary,DNA replication,GDSC,Camptothecin
+Vinblastine,MICROTUBULE DESTABILISER,primary,Mitosis,GDSC,Vinblastine
+Cisplatin,DNA CROSSLINKER,primary,DNA replication,GDSC,Cisplatin
+Cytarabine,ANTIMETABOLITE,primary,Other,GDSC,Cytarabine
+Docetaxel,MICROTUBULE STABILISER,primary,Mitosis,GDSC,Docetaxel
+Methotrexate,ANTIMETABOLITE,primary,DNA replication,GDSC,Methotrexate
+Tretinoin,RETINOIC ACID,primary,Other,GDSC,Tretinoin
+Gefitinib,EGFR,primary,EGFR signaling,GDSC,Gefitinib
+Navitoclax,BCL2,primary,Apoptosis regulation,GDSC,Navitoclax
+Navitoclax,BCL-XL,secondary,Apoptosis regulation,GDSC,Navitoclax
+Navitoclax,BCL-W,secondary,Apoptosis regulation,GDSC,Navitoclax
+Vorinostat,HDAC INHIBITOR CLASS I,primary,Chromatin histone acetylation,GDSC,Vorinostat
+Vorinostat,IIA,secondary,Chromatin histone acetylation,GDSC,Vorinostat
+Vorinostat,IIB,secondary,Chromatin histone acetylation,GDSC,Vorinostat
+Vorinostat,IV,secondary,Chromatin histone acetylation,GDSC,Vorinostat
+Nilotinib,ABL1,primary,ABL signaling,GDSC,Nilotinib
+Refametinib_repl_1014,MEK1,primary,ERK MAPK signaling,GDSC,Refametinib
+Refametinib_repl_1014,MEK2,secondary,ERK MAPK signaling,GDSC,Refametinib
+CI-1040,MEK1,primary,ERK MAPK signaling,GDSC,CI-1040
+CI-1040,MEK2,secondary,ERK MAPK signaling,GDSC,CI-1040
+Temsirolimus,MTOR,primary,PI3K/MTOR signaling,GDSC,Temsirolimus
+Olaparib_repl_1017,PARP1,primary,Genome integrity,GDSC,Olaparib
+Olaparib_repl_1017,PARP2,secondary,Genome integrity,GDSC,Olaparib
+Veliparib,PARP1,primary,Genome integrity,GDSC,Veliparib
+Veliparib,PARP2,secondary,Genome integrity,GDSC,Veliparib
+Bosutinib,SRC,primary,"Other, kinases",GDSC,Bosutinib
+Bosutinib,ABL1,secondary,"Other, kinases",GDSC,Bosutinib
+Bosutinib,TEC,secondary,"Other, kinases",GDSC,Bosutinib
+Lenalidomide,CRBN,primary,Protein stability and degradation,GDSC,Lenalidomide
+Axitinib,PDGFRA,primary,RTK signaling,GDSC,Axitinib
+Axitinib,KIT,secondary,RTK signaling,GDSC,Axitinib
+Axitinib,KDR,secondary,RTK signaling,GDSC,Axitinib
+AZD7762,CHEK1,primary,Cell cycle,GDSC,AZD7762
+AZD7762,CHEK2,secondary,Cell cycle,GDSC,AZD7762
+GW441756,NTRK1,primary,RTK signaling,GDSC,GW441756
+Lestauritinib,NA,NA,NA,not_found,NA
+SNX-2112,HSP90AA1,primary,Protein stability and degradation,GDSC,SNX-2112
+THZ-2-102-1,CDK7,primary,Cell cycle,GDSC,THZ-2-102-1
+SB216763,GSK3A,primary,WNT signaling,GDSC,SB216763
+SB216763,GSK3B,secondary,WNT signaling,GDSC,SB216763
+Erlotinib,EGFR,primary,EGFR signaling,GDSC,Erlotinib
+Rapamycin,MTOR,primary,PI3K/MTOR signaling,GDSC,Rapamycin
+Sunitinib,PDGFRA,primary,RTK signaling,GDSC,Sunitinib
+Sunitinib,KIT,secondary,RTK signaling,GDSC,Sunitinib
+Sunitinib,KDR,secondary,RTK signaling,GDSC,Sunitinib
+Sunitinib,FLT3,secondary,RTK signaling,GDSC,Sunitinib
+Sunitinib,RET,secondary,RTK signaling,GDSC,Sunitinib
+Sunitinib,CSF1R,secondary,RTK signaling,GDSC,Sunitinib
+PHA-665752,MET,primary,RTK signaling,GDSC,PHA-665752
+MG-132,PROTEASOME,primary,Protein stability and degradation,GDSC,MG-132
+MG-132,CAPN1,secondary,Protein stability and degradation,GDSC,MG-132
+Paclitaxel,MICROTUBULE STABILISER,primary,Mitosis,GDSC,Paclitaxel
+Cyclopamine,SMO,primary,Other,GDSC,Cyclopamine
+AZ628,BRAF,primary,ERK MAPK signaling,GDSC,AZ628
+Sorafenib,PDGFRA,primary,RTK signaling,GDSC,Sorafenib
+Sorafenib,KIT,secondary,RTK signaling,GDSC,Sorafenib
+Sorafenib,KDR,secondary,RTK signaling,GDSC,Sorafenib
+Sorafenib,BRAF,secondary,RTK signaling,GDSC,Sorafenib
+Tozasertib,AURKA,primary,Mitosis,GDSC,Tozasertib
+Tozasertib,AURKB,secondary,Mitosis,GDSC,Tozasertib
+Tozasertib,AURKC,secondary,Mitosis,GDSC,Tozasertib
+Tozasertib,OTHERS,secondary,Mitosis,GDSC,Tozasertib
+Imatinib,ABL1,primary,"Other, kinases",GDSC,Imatinib
+Imatinib,KIT,secondary,"Other, kinases",GDSC,Imatinib
+Imatinib,PDGFRA,secondary,"Other, kinases",GDSC,Imatinib
+NVP-TAE684,ALK,primary,RTK signaling,GDSC,NVP-TAE684
+Crizotinib,MET,primary,RTK signaling,GDSC,Crizotinib
+Crizotinib,ALK,secondary,RTK signaling,GDSC,Crizotinib
+Crizotinib,ROS1,secondary,RTK signaling,GDSC,Crizotinib
+Saracatinib,ABL1,primary,"Other, kinases",GDSC,Saracatinib
+Saracatinib,SRC,secondary,"Other, kinases",GDSC,Saracatinib
+S-Trityl-L-cysteine,KIF11,primary,Mitosis,GDSC,S-Trityl-L-cysteine
+Z-LLNle-CHO,GAMMA-SECRETASE,primary,Other,GDSC,Z-LLNle-CHO
+Dasatinib,ABL1,primary,RTK signaling,GDSC,Dasatinib
+Dasatinib,SRC,secondary,RTK signaling,GDSC,Dasatinib
+Dasatinib,EPHRINS,secondary,RTK signaling,GDSC,Dasatinib
+Dasatinib,PDGFRA,secondary,RTK signaling,GDSC,Dasatinib
+Dasatinib,KIT,secondary,RTK signaling,GDSC,Dasatinib
+GNF-2,BCR-ABL,primary,ABL signaling,GDSC,GNF-2
+CGP-60474,CDK1,primary,Cell cycle,GDSC,CGP-60474
+CGP-60474,CDK2,secondary,Cell cycle,GDSC,CGP-60474
+CGP-60474,CDK5,secondary,Cell cycle,GDSC,CGP-60474
+CGP-60474,CDK7,secondary,Cell cycle,GDSC,CGP-60474
+CGP-60474,CDK9,secondary,Cell cycle,GDSC,CGP-60474
+CGP-60474,PKC,secondary,Cell cycle,GDSC,CGP-60474
+CGP-082996,CDK4,primary,Cell cycle,GDSC,CGP-082996
+A-770041,LCK,primary,"Other, kinases",GDSC,A-770041
+A-770041,FYN,secondary,"Other, kinases",GDSC,A-770041
+WH-4-023,SRC,primary,"Other, kinases",GDSC,WH-4-023
+WH-4-023,LCK,secondary,"Other, kinases",GDSC,WH-4-023
+WZ-1-84,BMX,primary,"Other, kinases",GDSC,WZ-1-84
+BI-2536,PLK1,primary,Cell cycle,GDSC,BI-2536
+BI-2536,PLK2,secondary,Cell cycle,GDSC,BI-2536
+BI-2536,PLK3,secondary,Cell cycle,GDSC,BI-2536
+BMS-536924_repl_62,IGF1R,primary,IGF1R signaling,GDSC,BMS-536924
+BMS-536924_repl_62,IR,secondary,IGF1R signaling,GDSC,BMS-536924
+BMS-509744,ITK,primary,"Other, kinases",GDSC,BMS-509744
+CMK,RSK2,primary,"Other, kinases",GDSC,CMK
+Pyrimethamine,DIHYDROFOLATE REDUCTASE (DHFR),primary,Other,GDSC,Pyrimethamine
+JW-7-52-1,MTOR,primary,PI3K/MTOR signaling,GDSC,JW-7-52-1
+A-443654,AKT1,primary,PI3K/MTOR signaling,GDSC,A-443654
+A-443654,AKT2,secondary,PI3K/MTOR signaling,GDSC,A-443654
+A-443654,AKT3,secondary,PI3K/MTOR signaling,GDSC,A-443654
+GW843682X,PLK1,primary,Cell cycle,GDSC,GW843682X
+Entinostat,HDAC1,primary,Chromatin histone acetylation,GDSC,Entinostat
+Entinostat,HDAC3,secondary,Chromatin histone acetylation,GDSC,Entinostat
+Parthenolide,HDAC1,primary,Chromatin histone acetylation,GDSC,Parthenolide
+GSK319347A,IKK,primary,"Other, kinases",GDSC,GSK319347A
+TGX221,PI3KBETA,primary,PI3K/MTOR signaling,GDSC,TGX221
+Bortezomib,PROTEASOME,primary,Protein stability and degradation,GDSC,Bortezomib
+XMD8-85,ERK5,primary,Other,GDSC,XMD8-85
+XMD8-85,BET,secondary,Other,GDSC,XMD8-85
+Seliciclib,CDK2,primary,Cell cycle,GDSC,Seliciclib
+Seliciclib,CDK7,secondary,Cell cycle,GDSC,Seliciclib
+Seliciclib,CDK9,secondary,Cell cycle,GDSC,Seliciclib
+Salubrinal,EIF2A,primary,Other,GDSC,Salubrinal
+Lapatinib,EGFR,primary,RTK signaling,GDSC,Lapatinib
+Lapatinib,ERBB2,secondary,RTK signaling,GDSC,Lapatinib
+GSK269962A_repl_127,ROCK1,primary,Cytoskeleton,GDSC,GSK269962A
+GSK269962A_repl_127,ROCK2,secondary,Cytoskeleton,GDSC,GSK269962A
